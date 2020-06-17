@@ -6,6 +6,6 @@ namespace musii
 {
     class Config
     {
-        public static string VersionString = "0.9-Testing";
+        public static string VersionString = "0.9.1-Testing";
     }
 }
