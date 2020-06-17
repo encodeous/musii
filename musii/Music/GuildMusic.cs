@@ -69,8 +69,7 @@ namespace musii.Music
             var eb = new EmbedBuilder {Title = $"Now Playing `{v.Title}`."};
             eb.WithColor(Color.Blue);
             eb.WithDescription(
-                $"Playing video `{v.Title}` [`{MessageSender.TimeSpanFormat(v.Duration)}`] in `{ActiveVoiceChannel.Name}`.\n" +
-                $"[—————————————————————]");
+                $"Playing video `{v.Title}` [`{MessageSender.TimeSpanFormat(v.Duration)}`] in `{ActiveVoiceChannel.Name}`.");
             eb.WithFooter(v.Url + " Requested By: " + user.Username + "#" + user.Discriminator);
             eb.WithThumbnailUrl(v.Thumbnails.HighResUrl);
 
@@ -126,7 +125,7 @@ namespace musii.Music
         {
             if (count == 1)
             {
-                isSkipped = true;
+                _isSkipped = true;
                 _cancellationTokenSource.Cancel();
             }
             else
@@ -139,7 +138,7 @@ namespace musii.Music
                     cnt++;
                 }
 
-                isMassSkip = true;
+                _isMassSkip = true;
                 _cancellationTokenSource.Cancel();
 
                 var eb = new EmbedBuilder();
@@ -224,30 +223,8 @@ namespace musii.Music
 
             sb.Append($"**Now Playing:** `{ActiveVideo.RequestedVideo.Title}`\n");
 
-            string playBar = "[**—";
-
             TimeSpan playedTime = DateTime.Now - ActiveVideo.StartedPlayingTime;
             TimeSpan length = ActiveVideo.RequestedVideo.Duration;
-
-            double percent = playedTime / length;
-
-            int bars = (int)Math.Round(30.0 * percent);
-
-            for (int i = 0; i < bars; i++)
-            {
-                playBar += "—";
-            }
-
-            playBar += "**";
-
-            for (int i = bars; i < 30; i++)
-            {
-                playBar += "—";
-            }
-
-            playBar += "]\n";
-
-            sb.Append(playBar);
 
             sb.Append($"**{MessageSender.TimeSpanFormat(playedTime)} / {MessageSender.TimeSpanFormat(length)}**\n");
             
@@ -265,9 +242,9 @@ namespace musii.Music
             return ActiveTextChannel.SendMessageAsync(null, false, eb.Build());
         }
 
-        private bool isSkipped;
+        private bool _isSkipped;
 
-        private bool isMassSkip;
+        private bool _isMassSkip;
 
         /// <summary>
         /// Called when bot leaves channel
@@ -278,6 +255,9 @@ namespace musii.Music
             if (IsActive)
             {
                 IsActive = false;
+                QueueLength = TimeSpan.Zero;
+                ActiveVideo = null;
+                VideoQueue.Clear();
                 MusicStoppedDelegate.Invoke(Guild);
                 _cancellationTokenSource.Cancel();
                 ActiveVoiceChannel.DisconnectAsync();
@@ -290,6 +270,8 @@ namespace musii.Music
         {
             try
             {
+                bool playSuccess = true;
+
                 if (IsPlaying || !IsActive)
                 {
                     if (dStream != null) await dStream.DisposeAsync().ConfigureAwait(false);
@@ -305,7 +287,6 @@ namespace musii.Music
                 var next = await GetNextRequestAsync().ConfigureAwait(false);
                 if (next == null)
                 {
-                    Stop();
                     return;
                 }
 
@@ -315,7 +296,7 @@ namespace musii.Music
 
                 StreamManifest manifest;
 
-                IStreamInfo streamInfo;
+                IStreamInfo streamInfo = null;
 
                 // Display Now Playing message
                 var msg = await NowPlayingAsync(ActiveVideo, ActiveTextChannel).ConfigureAwait(false);
@@ -337,119 +318,122 @@ namespace musii.Music
                     catch
                     {
                         await FailedPlayingAsync(ActiveVideo, msg, ActiveTextChannel).ConfigureAwait(false);
-                        return;
+                        playSuccess = false;
                     }
                 }
 
-                if (streamInfo == null)
+                if (streamInfo == null && playSuccess)
                 {
                     await FailedPlayingAsync(ActiveVideo, msg, ActiveTextChannel).ConfigureAwait(false);
-                    return;
-                }
-                
-                // Start FFMPEG
-                var mpeg = Ffmpeg.CreateFfmpeg(streamInfo.Url);
-
-                Stream youtube = null;
-
-                if (dStream == null)
-                {
-                    if (ActiveAudioClient == null || ActiveAudioClient.ConnectionState != ConnectionState.Connected)
-                    {
-                        ActiveAudioClient = await ActiveVoiceChannel.ConnectAsync(true).ConfigureAwait(false);
-                    }
-                    dStream = ActiveAudioClient.CreatePCMStream(AudioApplication.Mixed);
+                    playSuccess = false;
                 }
 
-                youtube = mpeg.StandardOutput.BaseStream;
-
-                // Start Caption Service
-                TaskUtils.Forget(() => CaptionService.CaptionAsync(_skipToken, ActiveVideo, Client, ActiveTextChannel));
-
-                // Check if bot is playing music to the wall
-                TaskUtils.Recur(async () =>
+                if (playSuccess)
                 {
-                    var temp = await ActiveVoiceChannel.GetUsersAsync().FlattenAsync()
-                        .ConfigureAwait(false);
-                    if (temp.Count() <= 1)
+                    // Start FFMPEG
+                    var mpeg = Ffmpeg.CreateFfmpeg(streamInfo.Url);
+
+                    Stream youtube = null;
+
+                    if (dStream == null)
                     {
-                        Stop();
-                    }
-                }, TimeSpan.FromSeconds(10), _skipToken);
-
-                var buf = new byte[65536];
-
-                while (!_skipToken.IsCancellationRequested)
-                {
-                    try
-                    {
-                        var len = await youtube.ReadAsync(buf, 0, 65536, _skipToken).ConfigureAwait(false);
-
-                        if (len == 0) _cancellationTokenSource.Cancel();
-
-                        await dStream.WriteAsync(buf, 0, len, _skipToken).ConfigureAwait(false);
-
-                        retries = 0;
-                    }
-                    catch(Exception e)
-                    {
-                        if (!(e is OperationCanceledException) && !(e is TaskCanceledException))
+                        if (ActiveAudioClient == null || ActiveAudioClient.ConnectionState != ConnectionState.Connected)
                         {
-                            try
+                            ActiveAudioClient = await ActiveVoiceChannel.ConnectAsync(true).ConfigureAwait(false);
+                        }
+                        dStream = ActiveAudioClient.CreatePCMStream(AudioApplication.Mixed);
+                    }
+
+                    youtube = mpeg.StandardOutput.BaseStream;
+
+                    // Start Caption Service
+                    TaskUtils.Forget(() => CaptionService.CaptionAsync(_skipToken, ActiveVideo, Client, ActiveTextChannel));
+
+                    // Check if bot is playing music to the wall
+                    TaskUtils.Recur(async () =>
+                    {
+                        var temp = await ActiveVoiceChannel.GetUsersAsync().FlattenAsync()
+                            .ConfigureAwait(false);
+                        if (temp.Count() <= 1)
+                        {
+                            Stop();
+                        }
+                    }, TimeSpan.FromSeconds(20), _skipToken);
+
+                    var buf = new byte[65536];
+
+                    while (!_skipToken.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            var len = await youtube.ReadAsync(buf, 0, 65536, _skipToken).ConfigureAwait(false);
+
+                            if (len == 0) _cancellationTokenSource.Cancel();
+
+                            await dStream.WriteAsync(buf, 0, len, _skipToken).ConfigureAwait(false);
+
+                            retries = 0;
+                        }
+                        catch (Exception e)
+                        {
+                            if (!(e is OperationCanceledException))
                             {
-                                dStream.Dispose();
-
-                                await ActiveVoiceChannel.DisconnectAsync().ConfigureAwait(false);
-
-                                await ActiveAudioClient.StopAsync().ConfigureAwait(false);
-
-                                await Task.Delay(500, _skipToken).ConfigureAwait(false);
-
-                                ActiveAudioClient = await ActiveVoiceChannel.ConnectAsync(true).ConfigureAwait(false);
-
-                                dStream = ActiveAudioClient.CreatePCMStream(AudioApplication.Mixed);
-
-                                retries++;
-
-                                if (retries > 100)
+                                try
                                 {
+                                    dStream.Dispose();
+
+                                    await ActiveVoiceChannel.DisconnectAsync().ConfigureAwait(false);
+
+                                    await ActiveAudioClient.StopAsync().ConfigureAwait(false);
+
+                                    await Task.Delay(500, _skipToken).ConfigureAwait(false);
+
+                                    ActiveAudioClient = await ActiveVoiceChannel.ConnectAsync(true).ConfigureAwait(false);
+
+                                    dStream = ActiveAudioClient.CreatePCMStream(AudioApplication.Mixed);
+
+                                    retries++;
+
+                                    if (retries > 100)
+                                    {
+                                        _cancellationTokenSource.Cancel();
+                                    }
+                                }
+                                catch
+                                {
+                                    // No Internet Connectivity? Channel Deleted?
                                     _cancellationTokenSource.Cancel();
                                 }
                             }
-                            catch
-                            {
-                                // No Internet Connectivity? Channel Deleted?
-                                _cancellationTokenSource.Cancel();
-                            }
                         }
                     }
+
+                    if (!_skipToken.IsCancellationRequested) _cancellationTokenSource.Cancel();
+
+                    await Task.Delay(500).ConfigureAwait(false);
+
+                    try
+                    {
+                        dStream.Flush();
+                    }
+                    catch
+                    {
+                    }
+
+                    try
+                    {
+                        await youtube.DisposeAsync().ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                    }
+
+                    mpeg.Kill();
                 }
 
-                if (!_skipToken.IsCancellationRequested) _cancellationTokenSource.Cancel();
-
-                await Task.Delay(500).ConfigureAwait(false);
-
-                try
+                if (!_isMassSkip && playSuccess)
                 {
-                    dStream.Flush();
-                }
-                catch
-                {
-                }
-
-                try
-                {
-                    await youtube.DisposeAsync().ConfigureAwait(false);
-                }
-                catch
-                {
-                }
-
-                mpeg.Kill();
-
-                if (!isMassSkip)
-                {
-                    if (isSkipped)
+                    if (_isSkipped)
                     {
                         await SkippedPlayingAsync(ActiveVideo, msg, ActiveTextChannel).ConfigureAwait(false);
                     }
@@ -469,7 +453,6 @@ namespace musii.Music
             catch (Exception e)
             {
                 Console.WriteLine(e.Message + e.StackTrace);
-                Stop();
             }
         }
     }

@@ -27,7 +27,7 @@ namespace musii.Utilities
             {
                 ProcessStartInfo proc = new ProcessStartInfo
                 {
-                    FileName = "ffmpeg",
+                    FileName = "ffmpeg.exe",
                     Arguments = $"-hide_banner -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
                     UseShellExecute = false,
                     CreateNoWindow = false,
