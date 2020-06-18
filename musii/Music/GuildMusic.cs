@@ -51,16 +51,18 @@ namespace musii.Music
 
             return await Task.Run(() =>
             {
-                while (true)
+                while (!VideoQueue.IsEmpty)
                 {
                     var success = VideoQueue.TryDequeue(out var req);
                     if (success) return req;
                 }
+
+                return null;
             }, _skipToken).ConfigureAwait(false);
         }
 
         public async Task<RestUserMessage> NowPlayingAsync(MusicRequest request,
-            ISocketMessageChannel ActiveTextChannel)
+            ISocketMessageChannel activeTextChannel)
         {
             var v = request.RequestedVideo;
 
@@ -73,11 +75,11 @@ namespace musii.Music
             eb.WithFooter(v.Url + " Requested By: " + user.Username + "#" + user.Discriminator);
             eb.WithThumbnailUrl(v.Thumbnails.HighResUrl);
 
-            return await ActiveTextChannel.SendMessageAsync(embed: eb.Build()).ConfigureAwait(false);
+            return await activeTextChannel.SendMessageAsync(embed: eb.Build()).ConfigureAwait(false);
         }
 
         public async Task<Task> FailedPlayingAsync(MusicRequest request, RestUserMessage msg,
-            ISocketMessageChannel ActiveTextChannel)
+            ISocketMessageChannel activeTextChannel)
         {
             var v = request.RequestedVideo;
 
@@ -121,7 +123,7 @@ namespace musii.Music
             TaskUtils.Forget(() => PlayAsync(ActiveTextChannel));
         }
 
-        public async Task SkipMusicAsync(int count, ISocketMessageChannel ActiveTextChannel)
+        public async Task SkipMusicAsync(int count, ISocketMessageChannel activeTextChannel)
         {
             if (count == 1)
             {
@@ -138,7 +140,6 @@ namespace musii.Music
                     cnt++;
                 }
 
-                _isMassSkip = true;
                 _cancellationTokenSource.Cancel();
 
                 var eb = new EmbedBuilder();
@@ -148,7 +149,7 @@ namespace musii.Music
                     VideoQueue.IsEmpty
                         ? $"The playlist is now `empty`."
                         : $"There are `{VideoQueue.Count}` remaining videos.");
-                await ActiveTextChannel.SendMessageAsync(embed: eb.Build()).ConfigureAwait(false);
+                await activeTextChannel.SendMessageAsync(embed: eb.Build()).ConfigureAwait(false);
             }
         }
 
@@ -219,15 +220,19 @@ namespace musii.Music
                 eb.WithFooter($"Next 20 items.");
             }
 
+            if (ActiveVideo == null)
+            {
+                sb.Append($"**Not Playing.**\n");
+            }
+            else
+            {
+                sb.Append($"**Now Playing:** `{ActiveVideo.RequestedVideo.Title}`\n");
+                TimeSpan playedTime = DateTime.Now - ActiveVideo.StartedPlayingTime;
+                TimeSpan length = ActiveVideo.RequestedVideo.Duration;
 
+                sb.Append($"**{MessageSender.TimeSpanFormat(playedTime)} / {MessageSender.TimeSpanFormat(length)}**\n");
+            }
 
-            sb.Append($"**Now Playing:** `{ActiveVideo.RequestedVideo.Title}`\n");
-
-            TimeSpan playedTime = DateTime.Now - ActiveVideo.StartedPlayingTime;
-            TimeSpan length = ActiveVideo.RequestedVideo.Duration;
-
-            sb.Append($"**{MessageSender.TimeSpanFormat(playedTime)} / {MessageSender.TimeSpanFormat(length)}**\n");
-            
             sb.Append($"\n");
 
             sb.Append($"**Next up:**\n");
@@ -243,8 +248,6 @@ namespace musii.Music
         }
 
         private bool _isSkipped;
-
-        private bool _isMassSkip;
 
         /// <summary>
         /// Called when bot leaves channel
@@ -263,9 +266,7 @@ namespace musii.Music
                 ActiveVoiceChannel.DisconnectAsync();
             }
         }
-
-        private int retries = 0;
-
+        
         public async Task PlayAsync(ISocketMessageChannel ActiveTextChannel, AudioOutStream dStream = null)
         {
             try
@@ -287,6 +288,7 @@ namespace musii.Music
                 var next = await GetNextRequestAsync().ConfigureAwait(false);
                 if (next == null)
                 {
+                    Stop();
                     return;
                 }
 
@@ -362,6 +364,8 @@ namespace musii.Music
 
                     var buf = new byte[65536];
 
+                    int retries = 0;
+
                     while (!_skipToken.IsCancellationRequested)
                     {
                         try
@@ -408,8 +412,6 @@ namespace musii.Music
                         }
                     }
 
-                    if (!_skipToken.IsCancellationRequested) _cancellationTokenSource.Cancel();
-
                     await Task.Delay(500).ConfigureAwait(false);
 
                     try
@@ -431,7 +433,9 @@ namespace musii.Music
                     mpeg.Kill();
                 }
 
-                if (!_isMassSkip && playSuccess)
+                if (!_skipToken.IsCancellationRequested) _cancellationTokenSource.Cancel();
+
+                if (playSuccess)
                 {
                     if (_isSkipped)
                     {
@@ -442,18 +446,25 @@ namespace musii.Music
                         await StoppedPlayingAsync(ActiveVideo, msg, ActiveTextChannel).ConfigureAwait(false);
                     }
                 }
-
-                QueueLength -= ActiveVideo.RequestedVideo.Duration;
-
-                IsPlaying = false;
-
-                await PlayAsync(ActiveTextChannel, dStream).ConfigureAwait(false);
-
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message + e.StackTrace);
             }
+
+            try
+            {
+                QueueLength -= ActiveVideo.RequestedVideo.Duration;
+            }
+            catch
+            {
+
+            }
+
+            ActiveVideo = null;
+            IsPlaying = false;
+
+            await PlayAsync(ActiveTextChannel, dStream).ConfigureAwait(false);
         }
     }
 }
