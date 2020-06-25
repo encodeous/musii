@@ -22,6 +22,8 @@ namespace musii.Music
         public TimeSpan PlayTime => DateTime.UtcNow - _startTime;
 
         public bool IsSkipped { get; set; }
+        public CancellationToken SkipToken => _skipSource.Token;
+        private CancellationTokenSource _skipSource = new CancellationTokenSource();
         public bool ShowSkipMessage { get; set; }
         private string _imageUrl;
         private string _name;
@@ -122,6 +124,8 @@ namespace musii.Music
             {
 
             }
+
+            _skipSource.Cancel();
         }
         private SemaphoreSlim semaphore = new SemaphoreSlim(1);
         private void UpdateDetails()

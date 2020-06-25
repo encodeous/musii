@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 
 namespace musii.Music
 {
@@ -22,6 +23,8 @@ namespace musii.Music
         public TimeSpan PlayTime { get; }
 
         public bool IsSkipped { get; set; }
+
+        public CancellationToken SkipToken { get; }
 
         public bool ShowSkipMessage { get; set; }
     }

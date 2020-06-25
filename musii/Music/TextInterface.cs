@@ -109,9 +109,9 @@ namespace musii.Music
             return new EmbedBuilder()
             {
                 Color = Color.Blue,
-                Title = $"Queued Video `{playback.Name}`.",
+                Title = $"Queued Song `{playback.Name}`.",
                 Description = $"`{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`.]\n" +
-                              $"The queue now has `{music.MusicPlaylist.Count}` videos.",
+                              $"The queue now has `{music.MusicPlaylist.Count}` songs.",
             ThumbnailUrl = playback.ImageUrl,
                 Footer = footer
             }.Build();
@@ -162,7 +162,7 @@ namespace musii.Music
             return new EmbedBuilder()
             {
                 Color = Color.Green,
-                Title = $"Skipped {count} videos."
+                Title = $"Skipped {count} songs."
             }.Build();
         }
 
@@ -177,7 +177,7 @@ namespace musii.Music
                 Color = Color.Green,
                 Title = $"Skipped Playing {playback.Name}",
                 Description =
-                    $"Skipped playing video `{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
+                    $"Skipped playing song `{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
                 Footer = footer
             }.Build();
         }
@@ -191,9 +191,25 @@ namespace musii.Music
             return new EmbedBuilder()
             {
                 Color = Color.Red,
-                Title = $"Stopped Playing ",
+                Title = $"Stopped Playing {playback.Name}",
                 Description =
-                    $"Stopped playing video `{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
+                    $"Stopped playing song `{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
+                Footer = footer
+            }.Build();
+        }
+
+        public static Embed NetworkErrorMessage(IMusicPlayback playback, IVoiceChannel channel, PrivateMusic music)
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Next Song: {GetPlaybackName(music.PeekNext())}"
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Purple,
+                Title = $"Encountered Network Error while playing {playback.Name}",
+                Description =
+                    $"Skipped playing song `{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
                 Footer = footer
             }.Build();
         }

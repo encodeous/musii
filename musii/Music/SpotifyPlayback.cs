@@ -20,7 +20,8 @@ namespace musii.Music
         private Process _mpeg;
         private Stream _youtubeStream;
         private DateTime _startTime = DateTime.MinValue;
-
+        public CancellationToken SkipToken => _skipSource.Token;
+        private CancellationTokenSource _skipSource = new CancellationTokenSource();
         private string trackQuery = "";
         public SpotifyPlayback(SimpleTrack track)
         {
@@ -70,7 +71,6 @@ namespace musii.Music
 
             return _youtubeStream;
         }
-
         public void Stop()
         {
             try
@@ -90,6 +90,7 @@ namespace musii.Music
             {
 
             }
+            _skipSource.Cancel();
         }
 
         private string _imageUrl;

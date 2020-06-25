@@ -38,6 +38,7 @@ namespace musii.Music
             if (MusicPlaylist.Count == 0)
             {
                 semaphore.Release();
+                _currentSong = null;
                 return null;
             }
 
@@ -74,6 +75,9 @@ namespace musii.Music
                 _currentSong.ShowSkipMessage = true;
 
                 _currentSong.Stop();
+
+                _currentSong = null;
+
                 if (mCount > 0)
                 {
                     for (int i = 0; i < mCount; i++)
