@@ -9,7 +9,7 @@ using musii.Utilities;
 using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
 
-namespace musii.Music
+namespace musii.Deprecated.Musiiv2
 {
     public class MusicPlayer
     {

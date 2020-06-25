@@ -1,4 +1,6 @@
 ﻿{
   "token": "<token here>",
-  "prefix": "m!"
+  "spotify_id": "<client id here>",
+  "spotify_secret": "<secret here>",
+  "prefix": "!"
 }

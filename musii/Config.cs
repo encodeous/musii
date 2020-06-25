@@ -6,6 +6,8 @@ namespace musii
 {
     class Config
     {
-        public static string VersionString = "0.9.1-Testing";
+        public static string VersionString = "3.0.1";
+        internal static string SpotifyClientId = "";
+        internal static string SpotifyClientSecret = "";
     }
 }

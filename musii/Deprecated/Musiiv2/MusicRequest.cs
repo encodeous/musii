@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using YoutubeExplode.Videos;
 
-namespace musii.Music
+namespace musii.Deprecated.Musiiv2
 {
     class MusicRequest
     {

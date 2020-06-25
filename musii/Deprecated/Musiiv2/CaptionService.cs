@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using musii.Music;
+using musii.Utilities;
 using YoutubeExplode;
 using YoutubeExplode.Videos.ClosedCaptions;
 
-namespace musii.Utilities
+namespace musii.Deprecated.Musiiv2
 {
     class CaptionService
     {

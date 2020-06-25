@@ -10,33 +10,38 @@ namespace musii.Modules
 {
     public class MusicBotModule : ModuleBase<SocketCommandContext>
     {
-        public static MusicPlayer player = new MusicPlayer();
+        //public static MusicPlayer player = new MusicPlayer();
 
-        [Command("play",  RunMode = RunMode.Async), Alias("p", "pl", "listen", "yt", "youtube")] 
+        [Command("play",  RunMode = RunMode.Async), Alias("p", "pl", "listen", "yt", "youtube","sp","spotify")] 
         public Task Play(params string[] keywords)
         {
-            return player.Play(Context, keywords);
+            //return player.Play(Context, keywords);
+            return MusicManager.GetPlayer(Context).PlayAsync(Context, keywords);
         }
         
         [Command("skip",  RunMode = RunMode.Async), Alias("s")] 
         public Task Skip()
         {
-            return player.Skip(Context, 1);
+            //return player.Skip(Context, 1);
+            return MusicManager.GetPlayer(Context).SkipMusicAsync(1, Context);
         }
         [Command("skip",  RunMode = RunMode.Async), Alias("s")] 
         public Task Skip(int cnt)
         {
-            return player.Skip(Context, cnt);
+            //return player.Skip(Context, cnt);
+            return MusicManager.GetPlayer(Context).SkipMusicAsync(cnt, Context);
         }
-        [Command("leave",  RunMode = RunMode.Async), Alias("empty","clear","c")] 
+        [Command("leave",  RunMode = RunMode.Async), Alias("empty","clear","c","stop")] 
         public Task Clear()
         {
-            return player.Clear(Context);
+            //return player.Clear(Context);
+            return MusicManager.GetPlayer(Context).ClearMusicAsync(Context);
         }
-        [Command("queue",  RunMode = RunMode.Async), Alias("q")] 
+        [Command("queue",  RunMode = RunMode.Async), Alias("q","next")] 
         public Task Queue()
         {
-            return player.ShowQueue(Context);
+            //return player.ShowQueue(Context);
+            return MusicManager.GetPlayer(Context).GetQueueAsync(Context);
         }
         [Command("musii", RunMode = RunMode.Async)]
         public Task Invite()
@@ -52,7 +57,19 @@ namespace musii.Modules
             }
             else
             {
-                return ReplyAsync(embed:GetHelpEmbed());
+                return ReplyAsync(embed: TextInterface.HelpMessage());
+            }
+        }
+        [Command("help", RunMode = RunMode.Async)]
+        public Task Help(params string[] k)
+        {
+            if (Context.Guild.Id == 719734487415652382)
+            {
+                return Task.CompletedTask;
+            }
+            else
+            {
+                return ReplyAsync(embed: TextInterface.HelpMessage());
             }
         }
 
@@ -70,28 +87,6 @@ namespace musii.Modules
                     "Thank you for showing interest in Musii.\n" +
                     "You can invite musii to your server with this link!\n" +
                     "https://discord.com/oauth2/authorize?client_id=709055409159405608&scope=bot&permissions=8",
-                Footer = footer
-            }.Build();
-        }
-
-        public static Embed GetHelpEmbed()
-        {
-            var footer = new EmbedFooterBuilder()
-            {
-                Text = "Contribute to Musii | https://github.com/encodeous/musii"
-            };
-            return new EmbedBuilder()
-            {
-                Color = Color.Blue,
-                Title = "**Musii| Help**",
-                Description =
-                    $"**Commands**\n" +
-                    $"  !help - Show help information\n" +
-                    $"  !play [p, pl, listen, yt, youtube] <youtube-link> - Plays the youtube link in your current voice channel\n" +
-                    $"  !s [skip] - Skips the active song\n" +
-                    $"  !c [leave, empty, clear] - Clears the playback queue\n" +
-                    $"  !q [queue] - Shows the songs in the queue\n" +
-                    $"  !musii - Invite Musii to your server!\n",
                 Footer = footer
             }.Build();
         }

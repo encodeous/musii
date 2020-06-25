@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -8,14 +7,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
-using Discord.Audio.Streams;
 using Discord.Rest;
 using Discord.WebSocket;
 using musii.Utilities;
 using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
 
-namespace musii.Music
+namespace musii.Deprecated.Musiiv2
 {
     class GuildMusic
     {
@@ -440,6 +438,7 @@ namespace musii.Music
                     if (_isSkipped)
                     {
                         await SkippedPlayingAsync(ActiveVideo, msg, ActiveTextChannel).ConfigureAwait(false);
+                        _isSkipped = false;
                     }
                     else
                     {

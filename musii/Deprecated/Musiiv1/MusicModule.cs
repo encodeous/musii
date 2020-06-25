@@ -17,7 +17,7 @@ using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.ClosedCaptions;
 using YoutubeExplode.Videos.Streams;
 
-namespace musii.Modules
+namespace musii.Deprecated.Musiiv1
 {
     /// <summary>
     /// Deprecated, Kept in as reference source code
