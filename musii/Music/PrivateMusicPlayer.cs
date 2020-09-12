@@ -321,7 +321,6 @@ namespace musii.Music
                     if (_guildAudioClient == null)
                     {
                         _guildAudioClient = await VoiceChannel.ConnectAsync();
-                        //_guildAudioClient.Disconnected += GuildAudioClientOnDisconnected;
                     }
                     if (_guildAudioClient.ConnectionState == ConnectionState.Disconnected)
                     {
@@ -336,17 +335,6 @@ namespace musii.Music
                 return null;
             }
             return _guildAudioStream;
-        }
-
-        private async Task GuildAudioClientOnDisconnected(Exception arg)
-        {
-            $"{arg.Message}{arg.StackTrace}".Log();
-            
-            if (_musicStructure.CurrentSong() != null)
-            {
-                await _guildAudioClient.StopAsync();
-                _guildAudioClient = await VoiceChannel.ConnectAsync();
-            }
         }
 
         private async Task PlayFunction()
@@ -398,6 +386,7 @@ namespace musii.Music
                         await Task.Delay(200).ConfigureAwait(false);
                         if (DateTime.UtcNow - prevTime <= TimeSpan.FromMilliseconds(300))
                         {
+                            await _guildAudioClient.StopAsync();
                             failedState = true;
                             break;
                         }
