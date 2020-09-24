@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 
@@ -20,9 +21,16 @@ namespace musii.Music
         public void QueueSong(IEnumerable<IMusicPlayback> songs)
         {
             semaphore.Wait();
-            foreach (var k in songs)
+            try
             {
-                MusicPlaylist.Enqueue(k);
+                foreach (var k in songs)
+                {
+                    MusicPlaylist.Enqueue(k);
+                }
+            }
+            catch
+            {
+
             }
             semaphore.Release();
         }
@@ -35,17 +43,23 @@ namespace musii.Music
         public IMusicPlayback PlayNext()
         {
             semaphore.Wait();
-            if (MusicPlaylist.Count == 0)
+            try
             {
-                semaphore.Release();
-                _currentSong = null;
-                return null;
+                if (MusicPlaylist.Count == 0)
+                {
+                    semaphore.Release();
+                    _currentSong = null;
+                    return null;
+                }
+
+                _currentSong = MusicPlaylist.Dequeue();
+
             }
+            catch
+            {
 
-            _currentSong = MusicPlaylist.Dequeue();
-
+            }
             semaphore.Release();
-
             return _currentSong;
         }
 
@@ -66,28 +80,54 @@ namespace musii.Music
                 semaphore.Release();
                 return 0;
             }
-            int mCount = Math.Min(count-1, MusicPlaylist.Count);
-
-            if (mCount >= 0)
+            int mCount = Math.Min(count - 1, MusicPlaylist.Count);
+            try
             {
-                _currentSong.IsSkipped = true;
-
-                _currentSong.ShowSkipMessage = true;
-
-                _currentSong.Stop();
-
-                _currentSong = null;
-
-                if (mCount > 0)
+                if (mCount >= 0)
                 {
-                    for (int i = 0; i < mCount; i++)
+                    _currentSong.IsSkipped = true;
+
+                    _currentSong.ShowSkipMessage = true;
+
+                    _currentSong.Stop();
+
+                    _currentSong = null;
+
+                    if (mCount > 0)
                     {
-                        MusicPlaylist.Dequeue();
+                        for (int i = 0; i < mCount; i++)
+                        {
+                            MusicPlaylist.Dequeue();
+                        }
                     }
                 }
             }
+            catch
+            {
+
+            }
             semaphore.Release();
             return mCount;
+        }
+
+        public void Shuffle()
+        {
+            semaphore.Wait();
+            try
+            {
+                var k = MusicPlaylist.ToList();
+                var shuffled = k.OrderBy(x => Guid.NewGuid()).ToList();
+                MusicPlaylist.Clear();
+                foreach (var p in shuffled)
+                {
+                    MusicPlaylist.Enqueue(p);
+                }
+            }
+            catch
+            {
+
+            }
+            semaphore.Release();
         }
     }
 }

@@ -20,7 +20,6 @@ namespace musii.Music
         private DateTime _startTime;
         public string PlaybackId { get; }
         public TimeSpan PlayTime => DateTime.UtcNow - _startTime;
-
         public bool IsSkipped { get; set; }
         public CancellationToken SkipToken => _skipSource.Token;
         private CancellationTokenSource _skipSource = new CancellationTokenSource();

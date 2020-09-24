@@ -168,6 +168,24 @@ namespace musii.Deprecated.Musiiv1
             }
         }
 
+        [Command("loop", RunMode = RunMode.Async), Alias("repeat", "l", "")]
+        public async Task Loop()
+        {
+            var channel = Context.Channel;
+            var voiceChannel = (Context.User as IGuildUser)?.VoiceChannel;
+            if (voiceChannel == null)
+            {
+                await channel.SendMessageAsync($"You must be in a voice channel to execute this command!").ConfigureAwait(false);
+                return;
+            }
+
+            if (activePlaying.ContainsKey(voiceChannel.Id))
+            {
+                await channel.SendMessageAsync($"Removed ``{activePlaying[voiceChannel.Id].Count}`` videos from the queue.").ConfigureAwait(false);
+                activePlaying[voiceChannel.Id].Clear();
+            }
+        }
+
         public static async Task PlayMusic(string[] keywords, IVoiceChannel voiceChannel, SocketCommandContext Context)
         {
             var channel = Context.Channel;

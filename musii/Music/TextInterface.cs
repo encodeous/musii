@@ -48,20 +48,26 @@ namespace musii.Music
         {
             var footer = new EmbedFooterBuilder()
             {
-                Text = "Contribute to Musii | https://github.com/encodeous/musii"
+                Text = "Contribute to Musii on Github! | https://github.com/encodeous/musii"
             };
             return new EmbedBuilder()
             {
                 Color = Color.Blue,
-                Title = "**Musii | Help**",
+                Title = "**Musii - Help**",
                 Description =
-                    $"**Commands**\n" +
-                    $"  !help - Show help information\n" +
-                    $"  !play [p, pl, listen, yt, youtube, spotify, sp] <youtube-link/spotify-playlist/album/track> - Plays the youtube/spotify link in your current voice channel\n" +
-                    $"  !s [skip] - Skips the active song\n" +
-                    $"  !c [leave, empty, clear, stop] - Clears the playback queue\n" +
-                    $"  !q [queue, next] - Shows the songs in the queue\n" +
-                    $"  !musii - Invite Musii to your server!\n",
+                    $"**PLAYBACK COMMANDS**\n" +
+                    $"**!play** — [`p, pl, listen, yt, youtube, spotify, sp`] <youtube-link/spotify-playlist/album/track> — *Plays the youtube/spotify link in your current voice channel*\n" +
+                    $"**!skip** — [`s`] <number-of-songs> — *Skips songs (1 by default)*\n" +
+                    $"**!clear** — [`leave, empty, c, stop`] — *Clears the playback queue*\n" +
+                    $"**!queue** — [`q, next`] — *Shows the songs in the queue*\n" +
+                    $"**!loop** — [`l, lp, repeat`] — *Toggles playback loop*\n" +
+                    $"**!shuffle** — [`r, random, mix`] — *Shuffle the playlist*\n" +
+                    $"\n" +
+                    $"**OTHER COMMANDS**\n" +
+                    $"**!lock** — *Prevents people without Manage Messages permission from using music commands*\n" +
+                    $"**!musii** — *Invite Musii to your server!*\n" +
+                    $"**!help** — *Shows help information*\n" +
+                    $"**!info** — *Displays runtime information*\n",
                 Footer = footer
             }.Build();
         }
@@ -157,6 +163,126 @@ namespace musii.Music
                 Footer = footer
             }.Build();
         }
+        public static Embed LoopOn()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Loop Is Now Enabled"
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Green,
+                Title = $"The queue will now play on repeat",
+                Description =
+                    $"Toggled Loop On.",
+                Footer = footer
+            }.Build();
+        }
+        public static Embed LoopOff()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Loop Is Now Disabled"
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Red,
+                Title = $"The queue will no longer play on repeat",
+                Description =
+                    $"Toggled Loop Off.",
+                Footer = footer
+            }.Build();
+        }
+        public static Embed LockOn()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"The session is now locked."
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Green,
+                Title = $"Toggled Lock",
+                Description =
+                    $"Lock has been enabled, only users with Manage Messages permission will be able to interact with the playlist.",
+                Footer = footer
+            }.Build();
+        }
+        public static Embed LockOff()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"The session is now unlocked."
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Red,
+                Title = $"Toggled Lock",
+                Description =
+                    $"Lock has been disabled, any user will be able to interact with the playlist.",
+                Footer = footer
+            }.Build();
+        }
+        public static Embed Locked()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Lacking Manage Messages permission."
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Red,
+                Title = $"This session is locked to moderators.",
+                Description =
+                    $"You do not have access to this command, please contact a moderator if you believe this is a mistake.",
+                Footer = footer
+            }.Build();
+        }
+        public static Embed Shuffled()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Shuffle"
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Teal,
+                Title = $"The playlist has been randomized",
+                Description =
+                    $"The items in the playlist have been shuffled.",
+                Footer = footer
+            }.Build();
+        }
+        public static Embed NoMusic()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Music Player"
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Red,
+                Title = $"There is no music playing.",
+                Description =
+                    $"Run this command when there is music playing.",
+                Footer = footer
+            }.Build();
+        }
+        public static Embed LockedPermission()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Lacking Manage Messages permission."
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Red,
+                Title = $"No Permissions",
+                Description =
+                    $"You do not have access to this command, please contact a moderator if you believe this is a mistake.",
+                Footer = footer
+            }.Build();
+        }
         public static Embed SkipSongsMessage(int count)
         {
             return new EmbedBuilder()
@@ -198,6 +324,22 @@ namespace musii.Music
             }.Build();
         }
 
+        public static Embed RequeuedSongMessage(IMusicPlayback playback, IVoiceChannel channel, PrivateMusic music)
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Next Song: {GetPlaybackName(music.PeekNext())}"
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.DarkOrange,
+                Title = $"Stopped Playing {playback.Name}",
+                Description =
+                    $"Stopped playing song `{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`. The song will be requeued. (Loop is on)",
+                Footer = footer
+            }.Build();
+        }
+
         public static Embed NetworkErrorMessage(IMusicPlayback playback, IVoiceChannel channel, PrivateMusic music)
         {
             var footer = new EmbedFooterBuilder()
@@ -214,7 +356,7 @@ namespace musii.Music
             }.Build();
         }
 
-        public static Embed GetQueueMessage(PrivateMusic music)
+        public static Embed GetQueueMessage(PrivateMusic music, bool looped)
         {
             int min = Math.Min(20, music.MusicPlaylist.Count);
             StringBuilder sb = new StringBuilder();
@@ -248,7 +390,7 @@ namespace musii.Music
 
             return new EmbedBuilder
             {
-                Title = $"Items In Queue:",
+                Title = looped? $"Items In Queue (On Loop):" : $"Items In Queue:",
                 Color = Color.Blue,
                 Footer = footer,
                 Description = sb.ToString()
