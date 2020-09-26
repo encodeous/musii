@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 
 namespace musii.Music
@@ -11,11 +13,10 @@ namespace musii.Music
 
         public static PrivateMusicPlayer GetPlayer(SocketCommandContext context)
         {
-            if (!_musicDictionary.ContainsKey(context.Guild.Id))
+            if (_musicDictionary.ContainsKey(context.Guild.Id))
             {
-                _musicDictionary[context.Guild.Id] = new PrivateMusicPlayer();
+                return _musicDictionary[context.Guild.Id] = new PrivateMusicPlayer();
             }
-
             return _musicDictionary[context.Guild.Id];
         }
     }

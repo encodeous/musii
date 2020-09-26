@@ -9,8 +9,13 @@ using Discord;
 using Discord.Audio;
 using Discord.Commands;
 using Discord.WebSocket;
+using musii.Deprecated.Musiiv2;
 using musii.Utilities;
 using SpotifyAPI.Web;
+using SpotifyAPI.Web.Models;
+using Victoria;
+using Victoria.Enums;
+using Victoria.EventArgs;
 using YoutubeExplode;
 using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
@@ -19,19 +24,48 @@ namespace musii.Music
 {
     class PrivateMusicPlayer
     {
-        public ISocketMessageChannel TextMessageChannel;
-        public IVoiceChannel VoiceChannel;
-        private PrivateMusic _musicStructure;
-        private YoutubeClient _guildMusicQuery;
-        private SemaphoreSlim _playbackSlim = new SemaphoreSlim(1);
-        private IAudioClient _guildAudioClient;
-        private AudioOutStream _guildAudioStream;
+        public LavaPlayer Player;
         private bool _loop = false;
         public bool Locked = false;
+
         public PrivateMusicPlayer()
         {
-            _musicStructure = new PrivateMusic();
-            _guildMusicQuery = new YoutubeClient();
+            Program.MusicNode.OnTrackStuck += MusicNodeOnTrackStuck;
+            Program.MusicNode.OnPlayerUpdated += MusicNodeOnPlayerUpdated;
+            Program.MusicNode.OnTrackEnded += MusicNodeOnTrackEnded;
+            Program.MusicNode.OnTrackException += MusicNodeOnTrackException;
+            Program.MusicNode.OnTrackStarted += MusicNodeOnTrackStarted;
+            Program.MusicNode.OnWebSocketClosed += MusicNodeOnWebSocketClosed;
+        }
+
+        private Task MusicNodeOnWebSocketClosed(WebSocketClosedEventArgs arg)
+        {
+            throw new NotImplementedException();
+        }
+
+        private Task MusicNodeOnTrackStarted(TrackStartEventArgs arg)
+        {
+            throw new NotImplementedException();
+        }
+
+        private Task MusicNodeOnTrackException(TrackExceptionEventArgs arg)
+        {
+            throw new NotImplementedException();
+        }
+
+        private Task MusicNodeOnTrackEnded(TrackEndedEventArgs arg)
+        {
+            throw new NotImplementedException();
+        }
+
+        private Task MusicNodeOnPlayerUpdated(PlayerUpdateEventArgs arg)
+        {
+            throw new NotImplementedException();
+        }
+
+        private Task MusicNodeOnTrackStuck(TrackStuckEventArgs arg)
+        {
+
         }
 
         public async Task LoopMusicAsync(SocketCommandContext context)
@@ -49,12 +83,12 @@ namespace musii.Music
 
         public async Task ShuffleMusicAsync(SocketCommandContext context)
         {
-            if (VoiceChannel == null)
+            if (Player == null)
             {
                 await context.Channel.SendMessageAsync(embed: TextInterface.NoMusic()).ConfigureAwait(false);
                 return;
             }
-            _musicStructure.Shuffle();
+            Player.Queue.Shuffle();
             await context.Channel.SendMessageAsync(embed: TextInterface.Shuffled()).ConfigureAwait(false);
         }
 
@@ -68,30 +102,27 @@ namespace musii.Music
                     .ConfigureAwait(false);
                 return;
             }
-            if (VoiceChannel == null)
+            if (Player == null)
             {
-                await channel.SendMessageAsync(embed:TextInterface.NoMusic()).ConfigureAwait(false);
+                await context.Channel.SendMessageAsync(embed: TextInterface.NoMusic()).ConfigureAwait(false);
                 return;
             }
-            if (voiceChannel.Id != VoiceChannel.Id)
+            if (voiceChannel.Id != Player.VoiceChannel.Id)
             {
                 await channel.SendMessageAsync($"You are not in the music channel!").ConfigureAwait(false);
                 return;
             }
 
-
-            var songs = _musicStructure.SkipSong(count) + 1;
-
-            if (count > 1)
+            if (count == 1)
             {
-                if (_musicStructure.PeekNext() == null)
-                {
-                    await context.Channel.SendMessageAsync(embed: TextInterface.QueueClearedMessage(songs));
-                }
-                else
-                {
-                    await context.Channel.SendMessageAsync(embed: TextInterface.SkipSongsMessage(songs));
-                }
+                await Player.StopAsync();
+            }
+            else if (count > 1)
+            {
+                int mcnt = Math.Min(count-1, Player.Queue.Count);
+                await context.Channel.SendMessageAsync(embed: TextInterface.QueueClearedMessage(mcnt+1));
+                Player.Queue.RemoveRange(0, mcnt);
+                await Player.StopAsync();
             }
         }
 
@@ -104,18 +135,18 @@ namespace musii.Music
                 await channel.SendMessageAsync($"You must be in a voice channel to execute this command!").ConfigureAwait(false);
                 return;
             }
-            if (VoiceChannel == null)
+            if (Player == null)
             {
-                await channel.SendMessageAsync(embed: TextInterface.NoMusic()).ConfigureAwait(false);
+                await context.Channel.SendMessageAsync(embed: TextInterface.NoMusic()).ConfigureAwait(false);
                 return;
             }
-            if (voiceChannel.Id != VoiceChannel.Id)
+            if (voiceChannel.Id != Player.VoiceChannel.Id)
             {
                 await channel.SendMessageAsync($"You are not in the music channel!").ConfigureAwait(false);
                 return;
             }
 
-            var songs = _musicStructure.SkipSong(_musicStructure.MusicPlaylist.Count + 2);
+            var songs = Player.Queue.Count;
             await context.Channel.SendMessageAsync(embed: TextInterface.QueueClearedMessage(songs+1));
         }
 
@@ -128,12 +159,12 @@ namespace musii.Music
                 await channel.SendMessageAsync($"You must be in a voice channel to execute this command!").ConfigureAwait(false);
                 return;
             }
-            if (VoiceChannel == null)
+            if (Player == null)
             {
-                await channel.SendMessageAsync(embed: TextInterface.NoMusic()).ConfigureAwait(false);
+                await context.Channel.SendMessageAsync(embed: TextInterface.NoMusic()).ConfigureAwait(false);
                 return;
             }
-            await context.Channel.SendMessageAsync(embed: TextInterface.GetQueueMessage(_musicStructure, _loop));
+            await context.Channel.SendMessageAsync(embed: TextInterface.GetQueueMessage(Player, _loop));
         }
         public async Task PlayAsync(SocketCommandContext context, string[] keywords)
         {
@@ -145,19 +176,15 @@ namespace musii.Music
                 await channel.SendMessageAsync($"You must be in a voice channel to execute this command!").ConfigureAwait(false);
                 return;
             }
-            if (VoiceChannel == null)
+            if (Player == null)
             {
-                VoiceChannel = voiceChannel;
-                TextMessageChannel = channel;
+                Player = await Program.MusicNode.JoinAsync(voiceChannel, channel as ITextChannel);
             }
-            else if (voiceChannel.Id != VoiceChannel.Id)
+            else if (voiceChannel.Id != Player.VoiceChannel.Id)
             {
                 await channel.SendMessageAsync($"You cannot play music in this channel while it is playing in another channel!").ConfigureAwait(false);
                 return;
             }
-
-            VoiceChannel = voiceChannel;
-
             if (ResourceLocator.IsPlaylist(keywords))
             {
                 await QueuePlaylist(keywords[0]);
@@ -199,17 +226,18 @@ namespace musii.Music
                 await SearchVideo(keywords);
             }
         }
+        private YoutubeClient _guildMusicQuery = new YoutubeClient();
         private async Task QueuePlaylist(string link)
         {
             var playlist = PlaylistId.TryParse(link).Value;
             var videos = _guildMusicQuery.Playlists.GetVideosAsync(playlist.Value);
             int cnt = 0;
 
-            List<IMusicPlayback> requests = new List<IMusicPlayback>();
-
             await foreach (var playlistVideo in videos)
             {
-                requests.Add(new YoutubePlayback(playlistVideo));
+                var ltrack = new LavaLazyTrack(playlistVideo.Title + " " + playlistVideo.Author, Program.MusicNode);
+                ltrack.ThumbnailUrl = playlistVideo.Thumbnails.StandardResUrl;
+                Player.Queue.Enqueue(ltrack);
                 cnt++;
                 if (cnt >= 500)
                 {
@@ -217,9 +245,7 @@ namespace musii.Music
                 }
             }
 
-            _musicStructure.QueueSong(requests);
-
-            await TextMessageChannel.SendMessageAsync(embed: TextInterface.QueuedSongsMessage(cnt));
+            await Player.TextChannel.SendMessageAsync(embed: TextInterface.QueuedSongsMessage(cnt));
 
             Playback();
         }
@@ -228,13 +254,15 @@ namespace musii.Music
             var tracks = list.Tracks.Items;
             int cnt = 0;
 
-            List<IMusicPlayback> requests = new List<IMusicPlayback>();
-
             foreach (var playlistTrack in tracks)
             {
                 if (playlistTrack.Track is FullTrack track)
                 {
-                    requests.Add(new SpotifyPlayback(track));
+                    var ltrack = new LavaLazyTrack(track.Name + " " + track.Album.Name, Program.MusicNode)
+                    {
+                        ThumbnailUrl = track.PreviewUrl
+                    };
+                    Player.Queue.Enqueue(ltrack);
                     cnt++;
                     if (cnt >= 500)
                     {
@@ -242,10 +270,7 @@ namespace musii.Music
                     }
                 }
             }
-
-            _musicStructure.QueueSong(requests);
-
-            await TextMessageChannel.SendMessageAsync(embed: TextInterface.QueuedSongsMessage(cnt));
+            await Player.TextChannel.SendMessageAsync(embed: TextInterface.QueuedSongsMessage(cnt));
 
             Playback();
         }
@@ -254,49 +279,50 @@ namespace musii.Music
             var tracks = list.Tracks.Items;
             int cnt = 0;
 
-            List<IMusicPlayback> requests = new List<IMusicPlayback>();
-
             foreach (var track in tracks)
             {
-                requests.Add(new SpotifyPlayback(track));
+                var ltrack = new LavaLazyTrack(track.Name, Program.MusicNode)
+                {
+                    ThumbnailUrl = track.PreviewUrl
+                };
+                Player.Queue.Enqueue(ltrack);
                 cnt++;
                 if (cnt >= 500)
                 {
                     break;
                 }
             }
-
-            _musicStructure.QueueSong(requests);
-
-            await TextMessageChannel.SendMessageAsync(embed: TextInterface.QueuedSongsMessage(cnt));
+            await Player.TextChannel.SendMessageAsync(embed: TextInterface.QueuedSongsMessage(cnt));
 
             Playback();
         }
         private async Task QueueVideo(string link)
         {
             var id = VideoId.TryParse(link).Value;
+            var vid = await _guildMusicQuery.Videos.GetAsync(id);
+            var ltrack = new LavaLazyTrack(vid.Title + " " + vid.Author, Program.MusicNode);
+            ltrack.ThumbnailUrl = vid.Thumbnails.StandardResUrl;
 
-            var pb = YoutubePlayback.Parse(id.Value);
-
-            _musicStructure.QueueSong(new []{ pb });
-
-            if (_musicStructure.CurrentSong() != null)
+            if (Player.Queue.Any())
             {
-                await TextMessageChannel.SendMessageAsync(embed: TextInterface.QueuedSongMessage(pb, _musicStructure));
+                await Player.TextChannel.SendMessageAsync(embed: TextInterface.QueuedSongMessage(ltrack, Player));
             }
+
+            Player.Queue.Enqueue(ltrack);
 
             Playback();
         }
         private async Task QueueSpotifyTrack(FullTrack track)
         {
-            var pb = new SpotifyPlayback(track);
+            var ltrack = new LavaLazyTrack(track.Name, Program.MusicNode);
+            ltrack.ThumbnailUrl = track.PreviewUrl;
 
-            _musicStructure.QueueSong(new[] { pb });
-
-            if (_musicStructure.CurrentSong() != null)
+            if (Player.Queue.Any())
             {
-                await TextMessageChannel.SendMessageAsync(embed: TextInterface.QueuedSongMessage(pb, _musicStructure));
+                await Player.TextChannel.SendMessageAsync(embed: TextInterface.QueuedSongMessage(ltrack, Player));
             }
+
+            Player.Queue.Enqueue(ltrack);
 
             Playback();
         }
@@ -306,212 +332,35 @@ namespace musii.Music
             var videos = _guildMusicQuery.Search.GetVideosAsync(query);
             try
             {
-                var id = await videos.FirstAsync().ConfigureAwait(false);
-                var pb = new YoutubePlayback(id);
-                _musicStructure.QueueSong(new[] { pb });
+                var vid = await videos.FirstAsync().ConfigureAwait(false);
 
-                if (_musicStructure.CurrentSong() != null)
+                var ltrack = new LavaLazyTrack(vid.Title + " " + vid.Author, Program.MusicNode);
+                ltrack.ThumbnailUrl = vid.Thumbnails.StandardResUrl;
+
+                if (Player.Queue.Any())
                 {
-                    await TextMessageChannel.SendMessageAsync(embed: TextInterface.QueuedSongMessage(pb, _musicStructure));
+                    await Player.TextChannel.SendMessageAsync(embed: TextInterface.QueuedSongMessage(ltrack, Player));
                 }
+
+                Player.Queue.Enqueue(ltrack);
 
                 Playback();
             }
             catch
             {
-                await TextMessageChannel.SendMessageAsync(embed: TextInterface.NotFoundMessage(query));
+                await Player.TextChannel.SendMessageAsync(embed: TextInterface.NotFoundMessage(query));
             }
         }
 
         private void Playback()
         {
-            if (_playbackSlim.CurrentCount > 0)
+            if (Player.PlayerState == PlayerState.Stopped)
             {
-                TaskUtils.Forget(PlayFunction);
-            }
-        }
-
-        private async Task<AudioOutStream> GetGuildStream()
-        {
-            try
-            {
-                if (_guildAudioClient == null ||
-                    _guildAudioClient.ConnectionState != ConnectionState.Connected ||
-                    _guildAudioStream == null)
+                if (Player.Queue.TryDequeue(out var val))
                 {
-                    await DisconnectGuildStream();
-                    _guildAudioStream = _guildAudioClient.CreatePCMStream(AudioApplication.Music);
+                    _ = Player.PlayAsync(val).ConfigureAwait(false);
                 }
             }
-            catch
-            {
-                return null;
-            }
-            return _guildAudioStream;
-        }
-
-        private async Task DisconnectGuildStream(bool reconnect = true)
-        {
-            if (_guildAudioStream != null)
-            {
-                await _guildAudioStream.DisposeAsync();
-                _guildAudioStream = null;
-            }
-            if (_guildAudioClient == null)
-            {
-                if(reconnect) _guildAudioClient = await VoiceChannel.ConnectAsync();
-            }
-            if (_guildAudioClient != null && _guildAudioClient.ConnectionState == ConnectionState.Disconnected)
-            {
-                await _guildAudioClient.StopAsync();
-                if (reconnect) _guildAudioClient = await VoiceChannel.ConnectAsync();
-            }
-        }
-
-        private async Task PlayFunction()
-        {
-            await _playbackSlim.WaitAsync();
-
-            while (true)
-            {
-                try
-                {
-                    var currentSong = _musicStructure.PlayNext();
-                    if (currentSong == null) break;
-                    Stream yStream = null;
-                    try
-                    {
-                        yStream = currentSong.GetStream();
-                    }
-                    catch (Exception e)
-                    {
-                        await TextMessageChannel.SendMessageAsync(
-                            embed: TextInterface.FailedPlayingMessage(currentSong, VoiceChannel, _musicStructure, e));
-                        continue;
-                    }
-
-                    if (yStream == null)
-                    {
-                        await TextMessageChannel.SendMessageAsync(
-                            embed: TextInterface.FailedPlayingMessage(currentSong, VoiceChannel, _musicStructure,
-                                new NullReferenceException("The resource was not found")));
-                        continue;
-                    }
-
-                    var msg = await TextMessageChannel.SendMessageAsync(
-                        embed: TextInterface.NowPlayingMessage(currentSong, VoiceChannel, _musicStructure));
-                    _ = CaptionService.CaptionAsync(currentSong, _guildMusicQuery, TextMessageChannel);
-
-                    bool failedState = false;
-                    while (true)
-                    {
-                        var gStream = await GetGuildStream();
-                        if (gStream == null)
-                        {
-                            failedState = true;
-                            break;
-                        }
-
-                        try
-                        {
-                            var status = await StreamCopy(yStream, gStream);
-                            if (status || currentSong.IsSkipped) break;
-                        }
-                        catch
-                        {
-                            if (currentSong.IsSkipped) break;
-                            await Task.Delay(100).ConfigureAwait(false);
-                            await _guildAudioClient.StopAsync();
-                            failedState = true;
-                            break;
-                        }
-                    }
-
-                    if (_guildAudioStream != null)
-                    {
-                        await _guildAudioStream.DisposeAsync();
-                        _guildAudioStream = null;
-                    }
-
-                    if (currentSong.ShowSkipMessage)
-                    {
-                        await msg.ModifyAsync(x =>
-                        {
-                            x.Embed = TextInterface.SkipSongMessage(currentSong, VoiceChannel, _musicStructure);
-                        });
-                    }
-                    else
-                    {
-                        if (failedState || _loop)
-                        {
-                            if (failedState)
-                            {
-                                await msg.ModifyAsync(x =>
-                                {
-                                    x.Embed = TextInterface.NetworkErrorMessage(currentSong, VoiceChannel, _musicStructure);
-                                });
-                                if (_loop) _musicStructure.QueueSong(new[] { YoutubePlayback.Parse(currentSong.PlaybackId) });
-                                await DisconnectGuildStream(false);
-                                currentSong.Stop();
-                            }
-                            else
-                            {
-                                await msg.ModifyAsync(x =>
-                                {
-                                    x.Embed = TextInterface.RequeuedSongMessage(currentSong, VoiceChannel, _musicStructure);
-                                });
-                                _musicStructure.QueueSong(new[] { YoutubePlayback.Parse(currentSong.PlaybackId) });
-                            }
-                        }
-                        else
-                        {
-                            await msg.ModifyAsync(x =>
-                            {
-                                x.Embed = TextInterface.StoppedSongMessage(currentSong, VoiceChannel, _musicStructure);
-                            });
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    $"{e.Message}{e.StackTrace}".Log();
-                }
-            }
-
-            _playbackSlim.Release();
-
-            if (_guildAudioStream != null)
-            {
-                await _guildAudioStream.DisposeAsync();
-                _guildAudioStream = null;
-            }
-
-            if (_guildAudioClient != null)
-            {
-                await _guildAudioClient.StopAsync();
-                _guildAudioClient = null;
-            }
-
-            VoiceChannel = null;
-            TextMessageChannel = null;
-        }
-
-        private async Task<bool> StreamCopy(Stream src, Stream dest)
-        {
-            var buf = new byte[65536];
-            while (_guildAudioClient.ConnectionState == ConnectionState.Connected)
-            {
-                var len = await src.ReadAsync(buf, 0, buf.Length);
-
-                if (len == 0)
-                {
-                    return true;
-                }
-
-                await dest.WriteAsync(buf, 0, len);
-            }
-
-            return false;
         }
     }
 }

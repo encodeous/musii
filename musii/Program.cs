@@ -4,12 +4,12 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using YoutubeExplode;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using musii.Modules;
 using musii.Music;
 using musii.Utilities;
+using Victoria;
 
 namespace musii
 {
@@ -19,6 +19,7 @@ namespace musii
         internal static DateTime StartTime = DateTime.Now;
         internal static DiscordSocketClient _client;
         internal static bool stop = false;
+        internal static LavaNode MusicNode;
 
         public static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
@@ -42,6 +43,8 @@ namespace musii
 
             Config.SpotifyClientId = _config["spotify_id"];
             Config.SpotifyClientSecret = _config["spotify_secret"];
+
+            _client.Ready += OnReadyAsync;
 
             await _client.StartAsync().ConfigureAwait(false);
 
@@ -70,6 +73,24 @@ namespace musii
                 await Task.Delay(5000).ConfigureAwait(false);
             }
 
+        }
+
+        private async Task OnReadyAsync()
+        {
+            MusicNode = new LavaNode(_client, new LavaConfig()
+            {
+
+            });
+            if (!MusicNode.IsConnected)
+            {
+                await MusicNode.ConnectAsync();
+            }
+            MusicNode.OnLog += arg => {
+                arg.Exception.Message.Log();
+                arg.Exception.StackTrace.Log();
+                arg.Message.Log();
+                return Task.CompletedTask;
+            };
         }
 
         private void ConsoleOnCancelKeyPress(object sender, ConsoleCancelEventArgs e)

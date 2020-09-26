@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Discord;
 using musii.Utilities;
+using Victoria;
 
 namespace musii.Music
 {
@@ -26,23 +27,6 @@ namespace musii.Music
             }
 
             return k;
-        }
-        public static string GetPlaybackName(IMusicPlayback source)
-        {
-            if (source == null)
-            {
-                return "End of Playlist";
-            }
-            else
-            {
-                return source.Name;
-            }
-        }
-        public static string GetPlatformString(IMusicPlayback source)
-        {
-            if (source is YoutubePlayback) return "YouTube";
-
-            return "";
         }
         public static Embed HelpMessage()
         {
@@ -72,54 +56,39 @@ namespace musii.Music
             }.Build();
         }
 
-        public static Embed NowPlayingMessage(IMusicPlayback playback, IVoiceChannel channel, PrivateMusic music)
+        public static Embed NowPlayingMessage(ILavaTrack playback, IVoiceChannel channel)
         {
-            var footer = new EmbedFooterBuilder()
-            {
-                Text = $"Next Song: {GetPlaybackName(playback)}"
-            };
             return new EmbedBuilder()
             {
                 Color = Color.Blue,
-                Title = $"Now Playing `{playback.Name}`.",
+                Title = $"Now Playing `{playback.Title}`.",
                 Description =
-                    $"Playing song `{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
-                ThumbnailUrl = playback.ImageUrl,
-                Footer = footer
+                    $"Playing song `{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
+                ThumbnailUrl = playback.ThumbnailUrl
             }.Build();
         }
 
-        public static Embed FailedPlayingMessage(IMusicPlayback playback, IVoiceChannel channel, PrivateMusic music, Exception e)
+        public static Embed FailedPlayingMessage(ILavaTrack playback, IVoiceChannel channel,  Exception e)
         {
-            var footer = new EmbedFooterBuilder()
-            {
-                Text = $"Next Song: {GetPlaybackName(music.PeekNext())}"
-            };
             return new EmbedBuilder()
             {
                 Color = Color.Orange,
-                Title = $"Failed Playing `{playback.Name}`.",
+                Title = $"Failed Playing `{playback.Title}`.",
                 Description =
-                    $"Failed playing song `{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`. \n{e.Message.Replace("\n"," ").Replace("\r","")}",
-                ThumbnailUrl = playback.ImageUrl,
-                Footer = footer
+                    $"Failed playing song `{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`. \n{e.Message.Replace("\n"," ").Replace("\r","")}",
+                ThumbnailUrl = playback.ThumbnailUrl
             }.Build();
         }
 
-        public static Embed QueuedSongMessage(IMusicPlayback playback, PrivateMusic music)
+        public static Embed QueuedSongMessage(ILavaTrack playback, LavaPlayer player)
         {
-            var footer = new EmbedFooterBuilder()
-            {
-                Text = $"Playback ID: {playback.PlaybackId}"
-            };
             return new EmbedBuilder()
             {
                 Color = Color.Blue,
-                Title = $"Queued Song `{playback.Name}`.",
-                Description = $"`{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`.]\n" +
-                              $"The queue now has `{music.MusicPlaylist.Count}` songs.",
-            ThumbnailUrl = playback.ImageUrl,
-                Footer = footer
+                Title = $"Queued Song `{playback.Title}`.",
+                Description = $"`{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`.]\n" +
+                              $"The queue now has `{player.Queue.Count}` songs.", 
+                ThumbnailUrl = playback.ThumbnailUrl,
             }.Build();
         }
 
@@ -292,100 +261,81 @@ namespace musii.Music
             }.Build();
         }
 
-        public static Embed SkipSongMessage(IMusicPlayback playback, IVoiceChannel channel, PrivateMusic music)
+        public static Embed SkipSongMessage(ILavaTrack playback, IVoiceChannel channel)
         {
-            var footer = new EmbedFooterBuilder()
-            {
-                Text = $"Next Song: {GetPlaybackName(music.PeekNext())}"
-            };
             return new EmbedBuilder()
             {
                 Color = Color.Green,
-                Title = $"Skipped Playing {playback.Name}",
+                Title = $"Skipped Playing {playback.Title}",
                 Description =
-                    $"Skipped playing song `{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
-                Footer = footer
+                    $"Skipped playing song `{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
             }.Build();
         }
 
-        public static Embed StoppedSongMessage(IMusicPlayback playback, IVoiceChannel channel, PrivateMusic music)
+        public static Embed StoppedSongMessage(ILavaTrack playback, IVoiceChannel channel)
         {
-            var footer = new EmbedFooterBuilder()
-            {
-                Text = $"Next Song: {GetPlaybackName(music.PeekNext())}"
-            };
             return new EmbedBuilder()
             {
                 Color = Color.Red,
-                Title = $"Stopped Playing {playback.Name}",
+                Title = $"Stopped Playing {playback.Title}",
                 Description =
-                    $"Stopped playing song `{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
-                Footer = footer
+                    $"Stopped playing song `{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
             }.Build();
         }
 
-        public static Embed RequeuedSongMessage(IMusicPlayback playback, IVoiceChannel channel, PrivateMusic music)
+        public static Embed RequeuedSongMessage(ILavaTrack playback, IVoiceChannel channel)
         {
-            var footer = new EmbedFooterBuilder()
-            {
-                Text = $"Next Song: {GetPlaybackName(music.PeekNext())}"
-            };
             return new EmbedBuilder()
             {
                 Color = Color.DarkOrange,
-                Title = $"Stopped Playing {playback.Name}",
+                Title = $"Stopped Playing {playback.Title}",
                 Description =
-                    $"Stopped playing song `{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`. The song will be requeued. (Loop is on)",
-                Footer = footer
+                    $"Stopped playing song `{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`. The song will be requeued. (Loop is on)",
             }.Build();
         }
 
-        public static Embed NetworkErrorMessage(IMusicPlayback playback, IVoiceChannel channel, PrivateMusic music)
+        public static Embed NetworkErrorMessage(ILavaTrack playback, IVoiceChannel channel)
         {
-            var footer = new EmbedFooterBuilder()
-            {
-                Text = $"Next Song: {GetPlaybackName(music.PeekNext())}"
-            };
             return new EmbedBuilder()
             {
                 Color = Color.Purple,
-                Title = $"Encountered Network Error while playing {playback.Name}",
+                Title = $"Encountered Network Error while playing {playback.Title}",
                 Description =
-                    $"Skipped playing song `{playback.Name}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
-                Footer = footer
+                    $"Skipped playing song `{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
             }.Build();
         }
 
-        public static Embed GetQueueMessage(PrivateMusic music, bool looped)
+        public static Embed GetQueueMessage(LavaPlayer music, bool looped)
         {
-            int min = Math.Min(20, music.MusicPlaylist.Count);
+            int min = Math.Min(20, music.Queue.Count);
             StringBuilder sb = new StringBuilder();
-            var l = music.GetQueue();
+            var l = music.Queue;
             int cnt = 0;
 
-            var cur = music.CurrentSong();
+            var cur = music.Track;
             if (cur == null)
             {
                 sb.Append($"**The queue is empty**\n");
             }
             else
             {
-                sb.Append($"**Now Playing:** `{cur.Name}`\n");
-
-                sb.Append($"{GetProgress(cur.PlayTime / cur.Duration)}\n");
-                sb.Append($"**{MessageSender.TimeSpanFormat(cur.PlayTime)} / {MessageSender.TimeSpanFormat(cur.Duration)}**\n");
+                sb.Append($"**Now Playing:** `{cur.Title}`\n");
+                sb.Append($"{GetProgress(cur.Position / cur.Duration)}\n");
+                sb.Append($"**{MessageSender.TimeSpanFormat(cur.Position)} / {MessageSender.TimeSpanFormat(cur.Duration)}**\n");
                 sb.Append($"\n**In Queue:**\n");
             }
 
+            var imn = l.GetEnumerator();
             for (int i = 0; i < min; i++)
             {
                 cnt++;
-                sb.Append($"**{cnt}**: `{l[i].Name}`\n");
+                sb.Append($"**{cnt}**: `{imn.Current.Title}`\n");
+                imn.MoveNext();
             }
 
             var footer = new EmbedFooterBuilder()
             {
-                Text = (min == music.MusicPlaylist.Count) ? "End of playlist." : $"Total {music.MusicPlaylist.Count} songs."
+                Text = (min == music.Queue.Count) ? "End of playlist." : $"Total {music.Queue.Count} songs."
             };
 
             return new EmbedBuilder
