@@ -36,9 +36,13 @@ namespace musii
             // Ignore system messages and messages from bots
             if (!(rawMessage is SocketUserMessage message)) return;
             if (message.Source != MessageSource.User) return;
-
+            if (!(rawMessage.Channel is IGuildChannel)) return;
             int argPos = 0;
-            if (!message.HasStringPrefix(Program._config["prefix"], ref argPos)) return;
+
+            string prefix = Program._config["prefix"];
+            var gid = (rawMessage.Channel as IGuildChannel).GuildId;
+            if (Program.AuthorizedGuilds.ContainsKey(gid)) prefix = Program.AuthorizedGuilds[gid].Prefix;
+            if (!message.HasStringPrefix(prefix, ref argPos) && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
 
             var context = new SocketCommandContext(_discord, message);
             var result = await _commands.ExecuteAsync(context, argPos, _provider).ConfigureAwait(false);

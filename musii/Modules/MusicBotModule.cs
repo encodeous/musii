@@ -1,22 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using musii.Music;
+using Newtonsoft.Json;
 
 namespace musii.Modules
 {
     public class MusicBotModule : ModuleBase<SocketCommandContext>
     {
         public static Dictionary<ulong, DateTime> Cooldown = new Dictionary<ulong, DateTime>();
-
         bool VerifyCooldowns(int seconds)
         {
+            if (!Program.AuthorizedGuilds.ContainsKey(Context.Guild.Id))
+            {
+                ReplyAsync(embed: TextInterface.Unauthorized());
+                return true;
+            }
             var id = Context.User.Id;
             if(!Cooldown.ContainsKey(id)) Cooldown[id] = DateTime.MinValue;
-            //Context.User.Id != 236596516423204865 && 
             if (DateTime.Now - Cooldown[id] < TimeSpan.FromSeconds(seconds))
             {
                 ReplyAsync(
@@ -27,6 +32,8 @@ namespace musii.Modules
             return false;
         }
 
+
+
         bool CheckPermissions()
         {
             if (MusicManager.GetPlayer(Context).Locked && !Context.Guild.GetUser(Context.User.Id).GuildPermissions.ManageMessages && Context.User.Id != 236596516423204865)
@@ -36,7 +43,27 @@ namespace musii.Modules
             }
             return false;
         }
-
+        [Command("authorize", RunMode = RunMode.Async), RequireOwner]
+        public Task Authorize()
+        {
+            Program.AuthorizedGuilds[Context.Guild.Id] = new GuildInfo(){Prefix = "!"};
+            File.WriteAllTextAsync("authorized.json", JsonConvert.SerializeObject(Program.AuthorizedGuilds));
+            return ReplyAsync(embed: TextInterface.Authorized());
+        }
+        [Command("unauthorize", RunMode = RunMode.Async), RequireOwner]
+        public Task Unauthorize()
+        {
+            Program.AuthorizedGuilds.Remove(Context.Guild.Id);
+            File.WriteAllTextAsync("authorized.json", JsonConvert.SerializeObject(Program.AuthorizedGuilds));
+            return ReplyAsync("Guild has been unauthorized.");
+        }
+        [Command("prefix", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageMessages)]
+        public Task Prefix(string s)
+        {
+            Program.AuthorizedGuilds[Context.Guild.Id].Prefix = s;
+            File.WriteAllTextAsync("authorized.json", JsonConvert.SerializeObject(Program.AuthorizedGuilds));
+            return ReplyAsync($"Guild Prefix has been changed to `{s}`");
+        }
         [Command("play",  RunMode = RunMode.Async), Alias("p", "pl", "listen", "yt", "youtube","sp","spotify")] 
         public Task Play(params string[] keywords)
         {
@@ -77,23 +104,46 @@ namespace musii.Modules
             //return player.ShowQueue(Context);
             return MusicManager.GetPlayer(Context).GetQueueAsync(Context);
         }
-        [Command("musii", RunMode = RunMode.Async)]
-        public Task Invite()
+        [Command("seek", RunMode = RunMode.Async), Alias("m", "move", "set")]
+        public Task Seek(string time)
         {
             if (VerifyCooldowns(1)) return Task.CompletedTask;
-            return Context.User.SendMessageAsync(embed: GetEmbed());
+            if (CheckPermissions()) return Task.CompletedTask;
+            if (time.Length < 2) return ReplyAsync("Invalid Format, expected (-)#{s/m/h}. ex. `-4m`");
+            var c = time[^1];
+            if (int.TryParse(time.Substring(0, time.Length - 1), out var res) && (c == 's' || c == 'm' || c == 'h'))
+            {
+                bool neg = res < 0;
+                res = Math.Abs(res);
+                if (c == 's')
+                {
+                    return MusicManager.GetPlayer(Context).SeekMusicAsync(Context, TimeSpan.FromSeconds(res), neg);
+                }
+                else if (c == 'm')
+                {
+                    return MusicManager.GetPlayer(Context).SeekMusicAsync(Context, TimeSpan.FromMinutes(res), neg);
+                }
+                else
+                {
+                    return MusicManager.GetPlayer(Context).SeekMusicAsync(Context, TimeSpan.FromHours(res), neg);
+                }
+            }
+            else
+            {
+                return ReplyAsync("Invalid Format, expected (-)#{s/m/h}. ex. `-4m`");
+            }
         }
         [Command("help", RunMode = RunMode.Async)]
         public Task Help()
         {
             if (VerifyCooldowns(1)) return Task.CompletedTask;
-            return ReplyAsync(embed: TextInterface.HelpMessage());
+            return ReplyAsync(embed: TextInterface.HelpMessage(Program.AuthorizedGuilds[Context.Guild.Id].Prefix));
         }
         [Command("help", RunMode = RunMode.Async)]
         public Task Help(params string[] k)
         {
             if (VerifyCooldowns(1)) return Task.CompletedTask;
-            return ReplyAsync(embed: TextInterface.HelpMessage());
+            return ReplyAsync(embed: TextInterface.HelpMessage(Program.AuthorizedGuilds[Context.Guild.Id].Prefix));
         }
 
         [Command("loop", RunMode = RunMode.Async), Alias("l", "repeat", "lp")]
@@ -102,6 +152,33 @@ namespace musii.Modules
             if (VerifyCooldowns(1)) return Task.CompletedTask;
             if (CheckPermissions()) return Task.CompletedTask;
             return MusicManager.GetPlayer(Context).LoopMusicAsync(Context);
+        }
+        [Command("pause", RunMode = RunMode.Async), Alias("hold", "suspend","ps")]
+        public Task Pause()
+        {
+            if (VerifyCooldowns(1)) return Task.CompletedTask;
+            if (CheckPermissions()) return Task.CompletedTask;
+            return MusicManager.GetPlayer(Context).PauseMusicAsync(Context);
+        }
+
+        [Command("v", RunMode = RunMode.Async), Alias("volume", "vol")]
+        public async Task Volume(int amount)
+        {
+            if (VerifyCooldowns(1)) return;
+            if (CheckPermissions()) return;
+            if (amount > 1000 || amount < 0) await ReplyAsync("Invalid Volume");
+            else
+            {
+                await MusicManager.GetPlayer(Context).Player.UpdateVolumeAsync((ushort)amount);
+                await ReplyAsync("**Volume Set To:** `" + amount + "`%");
+            }
+        }
+        [Command("v", RunMode = RunMode.Async), Alias("volume", "vol")]
+        public Task Volume()
+        {
+            if (VerifyCooldowns(1)) return Task.CompletedTask;
+            if (CheckPermissions()) return Task.CompletedTask;
+            return ReplyAsync("**Volume:** `"+MusicManager.GetPlayer(Context).Player.Volume+"`%");
         }
 
         [Command("shuffle", RunMode = RunMode.Async), Alias("r", "random", "mix")]
@@ -133,24 +210,6 @@ namespace musii.Modules
             {
                 return ReplyAsync(embed: TextInterface.LockedPermission());
             }
-        }
-
-        public static Embed GetEmbed()
-        {
-            var footer = new EmbedFooterBuilder()
-            {
-                Text = "Contribute to Musii | https://github.com/encodeous/musii"
-            };
-            return new EmbedBuilder()
-            {
-                Color = Color.Blue,
-                Title = "**Invite Musii**",
-                Description =
-                    "Thank you for showing interest in Musii.\n" +
-                    "You can invite musii to your server with this link!\n" +
-                    "https://discord.com/oauth2/authorize?client_id=709055409159405608&scope=bot&permissions=8",
-                Footer = footer
-            }.Build();
         }
     }
 }

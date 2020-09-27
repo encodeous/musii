@@ -11,7 +11,7 @@ namespace Victoria {
     /// </typeparam>
     public sealed class DefaultQueue<T> : IEnumerable<T> where T : ILavaTrack
     {
-        private readonly LinkedList<T> _list;
+        public readonly LinkedList<T> _list;
         private readonly Random _random;
 
         /// <summary>

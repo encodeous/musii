@@ -36,7 +36,7 @@ namespace musii.Modules
                 Color = Color.Blue,
                 Title = "**Information**",
                 Description =
-                    $"Musii Bot {Config.VersionString}, Uptime:" +
+                    $"{Config.Name} Bot {Config.VersionString}, Uptime:" +
                     $" {MessageSender.TimeSpanFormat(st)}, Latency {Program._client.Latency}\n" +
                     $"Type !help for help.",
                 Footer = footer

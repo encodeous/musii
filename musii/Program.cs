@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Discord;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using musii.Modules;
 using musii.Music;
 using musii.Utilities;
+using Newtonsoft.Json;
 using Victoria;
 
 namespace musii
@@ -20,16 +22,22 @@ namespace musii
         internal static DiscordSocketClient _client;
         internal static bool stop = false;
         internal static LavaNode MusicNode;
+        public static Dictionary<ulong,GuildInfo> AuthorizedGuilds = new Dictionary<ulong, GuildInfo>();
 
         public static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
 
         public async Task MainAsync()
         {
-            $"Starting MUSII Bot {Config.VersionString}...".Log();
+            $"Starting {Config.Name} Bot {Config.VersionString}...".Log();
             $"Building Configuration".Log();
 
             _config = BuildConfig();
+
+            if (File.Exists("authorized.json"))
+            {
+                AuthorizedGuilds = JsonConvert.DeserializeObject<Dictionary<ulong, GuildInfo>>(await File.ReadAllTextAsync("authorized.json"));
+            }
 
             $"Starting Discord Client".Log();
             _client = new DiscordSocketClient();
@@ -86,8 +94,11 @@ namespace musii
                 await MusicNode.ConnectAsync();
             }
             MusicNode.OnLog += arg => {
-                arg.Exception.Message.Log();
-                arg.Exception.StackTrace.Log();
+                if (arg.Exception != null)
+                {
+                    arg.Exception.Message.Log();
+                    arg.Exception.StackTrace.Log();
+                }
                 arg.Message.Log();
                 return Task.CompletedTask;
             };

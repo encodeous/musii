@@ -59,7 +59,7 @@ namespace Victoria {
         /// <summary>
         ///     Player's current volume.
         /// </summary>
-        public int Volume { get; private set; }
+        public int Volume { get; private set; } = 100;
 
         private readonly IDictionary<int, EqualizerBand> _equalizer;
 

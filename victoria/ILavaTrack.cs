@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Discord;
+using Discord.WebSocket;
 
 namespace Victoria
 {
@@ -51,12 +52,5 @@ namespace Victoria
         ///     Track's url.
         /// </summary>
         string Url { get; }
-
-        /// <summary>
-        ///     Track's Thumbnail url.
-        /// </summary>
-        string ThumbnailUrl { get; set; }
-
-        IMessage TrackMessage { get; set; }
     }
 }

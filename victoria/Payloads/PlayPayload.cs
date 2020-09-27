@@ -17,7 +17,7 @@ namespace Victoria.Payloads {
 
 		public PlayPayload(ulong guildId, ILavaTrack track, bool noReplace) : base(guildId, "play") {
 			Hash = track.Hash;
-			StartTime = 0;
+            StartTime = (int) track.Position.TotalMilliseconds;
 			EndTime = (int) track.Duration.TotalMilliseconds;
 			NoReplace = noReplace;
 		}

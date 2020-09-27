@@ -226,7 +226,7 @@ namespace Victoria {
 				throw new ArgumentNullException(nameof(voiceChannel));
 			}
 
-			if (_playerCache.TryGetValue(voiceChannel.GuildId, out var player)) {
+			if (_playerCache.TryGetValue(voiceChannel.GuildId, out var player) && player.VoiceChannel.Id == voiceChannel.Id) {
 				return player;
 			}
 
@@ -252,13 +252,27 @@ namespace Victoria {
 				return;
 			}
 
-			await player.DisposeAsync()
-			   .ConfigureAwait(false);
+            try
+            {
+                await player.DisposeAsync()
+                    .ConfigureAwait(false);
+			}
+            catch
+            {
 
-			await voiceChannel.DisconnectAsync()
-			   .ConfigureAwait(false);
+            }
 
-			_playerCache.TryRemove(voiceChannel.GuildId, out _);
+            try
+            {
+                await voiceChannel.DisconnectAsync()
+                    .ConfigureAwait(false);
+			}
+            catch
+            {
+
+            }
+
+            _playerCache.TryRemove(voiceChannel.GuildId, out _);
 		}
 
 		/// <summary>

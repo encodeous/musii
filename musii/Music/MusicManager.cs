@@ -13,9 +13,9 @@ namespace musii.Music
 
         public static PrivateMusicPlayer GetPlayer(SocketCommandContext context)
         {
-            if (_musicDictionary.ContainsKey(context.Guild.Id))
+            if (!_musicDictionary.ContainsKey(context.Guild.Id))
             {
-                return _musicDictionary[context.Guild.Id] = new PrivateMusicPlayer();
+                return _musicDictionary[context.Guild.Id] = new PrivateMusicPlayer(context.Guild.Id);
             }
             return _musicDictionary[context.Guild.Id];
         }

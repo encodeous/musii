@@ -28,7 +28,7 @@ namespace musii.Music
 
             return k;
         }
-        public static Embed HelpMessage()
+        public static Embed HelpMessage(string prefix)
         {
             var footer = new EmbedFooterBuilder()
             {
@@ -37,22 +37,25 @@ namespace musii.Music
             return new EmbedBuilder()
             {
                 Color = Color.Blue,
-                Title = "**Musii - Help**",
+                Title = $"**{Config.Name} - Help**",
                 Description =
                     $"**PLAYBACK COMMANDS**\n" +
-                    $"**!play** — [`p, pl, listen, yt, youtube, spotify, sp`] <youtube-link/spotify-playlist/album/track> — *Plays the youtube/spotify link in your current voice channel*\n" +
-                    $"**!skip** — [`s`] <number-of-songs> — *Skips songs (1 by default)*\n" +
-                    $"**!clear** — [`leave, empty, c, stop`] — *Clears the playback queue*\n" +
-                    $"**!queue** — [`q, next`] — *Shows the songs in the queue*\n" +
-                    $"**!loop** — [`l, lp, repeat`] — *Toggles playback loop*\n" +
-                    $"**!shuffle** — [`r, random, mix`] — *Shuffle the playlist*\n" +
+                    $"**{prefix}play** — [`p, pl, listen, yt, youtube, spotify, sp`] <youtube-link/spotify-playlist/album/track> — *Plays the youtube/spotify link in your current voice channel*\n" +
+                    $"**{prefix}skip** — [`s`] <number-of-songs> — *Skips songs (1 by default)*\n" +
+                    $"**{prefix}clear** — [`leave, empty, c, stop`] — *Clears the playback queue*\n" +
+                    $"**{prefix}queue** — [`q, next`] — *Shows the songs in the queue*\n" +
+                    $"**{prefix}loop** — [`l, lp, repeat`] — *Toggles playback loop*\n" +
+                    $"**{prefix}shuffle** — [`r, random, mix`] — *Shuffle the playlist*\n" +
+                    $"**{prefix}pause** — [`ps, hold, suspend`] — *Temporarily pause playback*\n" +
+                    $"**{prefix}volume** — [`v, vol`] <volume> — *Adjust Playback Volume [0%-1000%]*\n" +
+                    $"**{prefix}seek** — [`move, set, m`] <time-delta> <s/m/h> — *Skip forward or back on current playback*\n" +
                     $"\n" +
                     $"**OTHER COMMANDS**\n" +
-                    $"**!lock** — *Prevents people without Manage Messages permission from using music commands*\n" +
-                    $"**!musii** — *Invite Musii to your server!*\n" +
-                    $"**!help** — *Shows help information*\n" +
-                    $"**!info** — *Displays runtime information*\n",
-                Footer = footer
+                    $"**{prefix}lock** — *Prevents people without Manage Messages permission from modifying the session*\n" +
+                    $"**{prefix}help** — *Shows help information*\n" +
+                    $"**{prefix}info** — *Displays runtime information*\n" +
+                    $"**{prefix}prefix** — <prefix> — *Set the prefix of the bot, requires modify message permissions.*",
+                    Footer = footer
             }.Build();
         }
 
@@ -64,31 +67,18 @@ namespace musii.Music
                 Title = $"Now Playing `{playback.Title}`.",
                 Description =
                     $"Playing song `{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
-                ThumbnailUrl = playback.ThumbnailUrl
             }.Build();
         }
 
-        public static Embed FailedPlayingMessage(ILavaTrack playback, IVoiceChannel channel,  Exception e)
-        {
-            return new EmbedBuilder()
-            {
-                Color = Color.Orange,
-                Title = $"Failed Playing `{playback.Title}`.",
-                Description =
-                    $"Failed playing song `{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`. \n{e.Message.Replace("\n"," ").Replace("\r","")}",
-                ThumbnailUrl = playback.ThumbnailUrl
-            }.Build();
-        }
-
-        public static Embed QueuedSongMessage(ILavaTrack playback, LavaPlayer player)
+        public static Embed QueuedSongMessage(ILavaTrack playback, LavaPlayer player, string thumbnailUrl)
         {
             return new EmbedBuilder()
             {
                 Color = Color.Blue,
                 Title = $"Queued Song `{playback.Title}`.",
                 Description = $"`{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`.]\n" +
-                              $"The queue now has `{player.Queue.Count}` songs.", 
-                ThumbnailUrl = playback.ThumbnailUrl,
+                              $"The queue now has `{player.Queue.Count+1}` songs.", 
+                ThumbnailUrl = thumbnailUrl,
             }.Build();
         }
 
@@ -159,6 +149,66 @@ namespace musii.Music
                 Title = $"The queue will no longer play on repeat",
                 Description =
                     $"Toggled Loop Off.",
+                Footer = footer
+            }.Build();
+        }
+        public static Embed Authorized()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Successfully Authorized Guild"
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Green,
+                Title = $"Authorized",
+                Description =
+                    $"This guild has been authorized to use {Config.Name}. Type !help for help.",
+                Footer = footer
+            }.Build();
+        }
+        public static Embed Unauthorized()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Please use !authorize to authorize the use of {Config.Name}"
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Red,
+                Title = $"This guild has not been authorized to use {Config.Name}.",
+                Description =
+                    $"Please contact the owner of this bot to authorize the use of {Config.Name} in this server.",
+                Footer = footer
+            }.Build();
+        }
+        public static Embed PauseOn()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Playback is now paused"
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Green,
+                Title = $"Paused",
+                Description =
+                    $"The music will stop playing.",
+                Footer = footer
+            }.Build();
+        }
+        public static Embed PauseOff()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Playback is nolonger paused"
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Red,
+                Title = $"Resumed",
+                Description =
+                    $"The music will start playing.",
                 Footer = footer
             }.Build();
         }
@@ -271,71 +321,45 @@ namespace musii.Music
                     $"Skipped playing song `{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
             }.Build();
         }
-
-        public static Embed StoppedSongMessage(ILavaTrack playback, IVoiceChannel channel)
+        public static Embed SeekMessage(ILavaTrack cur, TimeSpan seekTime, bool paused)
         {
+            StringBuilder sb = new StringBuilder();
+            sb.Append($"{GetProgress(seekTime / cur.Duration)}\n");
+            sb.Append($"**{MessageSender.TimeSpanFormat(seekTime)} / {MessageSender.TimeSpanFormat(cur.Duration)}**  {(paused ? "- **PAUSED**" : "")}\n");
             return new EmbedBuilder()
             {
-                Color = Color.Red,
-                Title = $"Stopped Playing {playback.Title}",
-                Description =
-                    $"Stopped playing song `{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
+                Color = Color.Green,
+                Title = $"Playback Time Set",
+                Description = sb.ToString()
             }.Build();
         }
 
-        public static Embed RequeuedSongMessage(ILavaTrack playback, IVoiceChannel channel)
-        {
-            return new EmbedBuilder()
-            {
-                Color = Color.DarkOrange,
-                Title = $"Stopped Playing {playback.Title}",
-                Description =
-                    $"Stopped playing song `{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`. The song will be requeued. (Loop is on)",
-            }.Build();
-        }
-
-        public static Embed NetworkErrorMessage(ILavaTrack playback, IVoiceChannel channel)
-        {
-            return new EmbedBuilder()
-            {
-                Color = Color.Purple,
-                Title = $"Encountered Network Error while playing {playback.Title}",
-                Description =
-                    $"Skipped playing song `{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
-            }.Build();
-        }
-
-        public static Embed GetQueueMessage(LavaPlayer music, bool looped)
+        public static Embed GetQueueMessage(LavaPlayer music, bool looped, bool paused)
         {
             int min = Math.Min(20, music.Queue.Count);
             StringBuilder sb = new StringBuilder();
             var l = music.Queue;
-            int cnt = 0;
 
             var cur = music.Track;
-            if (cur == null)
+            sb.Append($"\n**In Queue:**\n");
+            var imn = l._list.Take(min);
+            imn = imn.Reverse();
+            int cnt = min;
+            foreach (var k in imn)
             {
-                sb.Append($"**The queue is empty**\n");
-            }
-            else
-            {
-                sb.Append($"**Now Playing:** `{cur.Title}`\n");
-                sb.Append($"{GetProgress(cur.Position / cur.Duration)}\n");
-                sb.Append($"**{MessageSender.TimeSpanFormat(cur.Position)} / {MessageSender.TimeSpanFormat(cur.Duration)}**\n");
-                sb.Append($"\n**In Queue:**\n");
+                sb.Append($"**{cnt}**: `{k.Title}`\n");
+                cnt--;
             }
 
-            var imn = l.GetEnumerator();
-            for (int i = 0; i < min; i++)
-            {
-                cnt++;
-                sb.Append($"**{cnt}**: `{imn.Current.Title}`\n");
-                imn.MoveNext();
-            }
+            sb.Append("\n");
+
+            sb.Append($"**Now Playing:** `{cur.Title}`\n");
+            sb.Append($"{GetProgress(cur.Position / cur.Duration)}\n");
+            sb.Append($"**{MessageSender.TimeSpanFormat(cur.Position)} / {MessageSender.TimeSpanFormat(cur.Duration)}**  {(paused ? "- **PAUSED**" : "")}\n");
 
             var footer = new EmbedFooterBuilder()
             {
-                Text = (min == music.Queue.Count) ? "End of playlist." : $"Total {music.Queue.Count} songs."
+                Text = (min == music.Queue.Count) ? "Entire Playlist Shown." : $"Total {music.Queue.Count} songs."
             };
 
             return new EmbedBuilder

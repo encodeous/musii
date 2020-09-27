@@ -1,5 +1,6 @@
 using Discord;
 using System;
+using Discord.WebSocket;
 
 namespace Victoria {
     /// <summary>
@@ -51,8 +52,6 @@ namespace Victoria {
         ///     Track's url.
         /// </summary>
         public string Url { get; }
-        public string ThumbnailUrl { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public IMessage TrackMessage { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         /// <summary>
         /// 
