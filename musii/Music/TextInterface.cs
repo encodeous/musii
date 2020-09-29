@@ -5,6 +5,7 @@ using System.Text;
 using Discord;
 using musii.Utilities;
 using Victoria;
+using Victoria.Enums;
 
 namespace musii.Music
 {
@@ -106,6 +107,46 @@ namespace musii.Music
                 Footer = footer
             }.Build();
         }
+        public static Embed InternalErrorMessage(string exception)
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Contribute to Musii | https://github.com/encodeous/musii"
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Red,
+                Title = $"An Internal Error Occurred.",
+                Description =
+                    $"Exception: {exception}",
+                Footer = footer
+            }.Build();
+        }
+
+        public static Embed StandardMessage(string s)
+        {
+            return new EmbedBuilder()
+            {
+                Color = Color.DarkTeal,
+                Description = s
+            }.Build();
+        }
+
+        public static Embed ReconnectingMessage()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"Contribute to Musii | https://github.com/encodeous/musii"
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.DarkTeal,
+                Title = $"Connection has been lost, reconnecting.",
+                Description =
+                    $"Discord has been unstable lately, the bot has been disconnected. Music Playback will resume in a few moments.",
+                Footer = footer
+            }.Build();
+        }
 
         public static Embed QueueClearedMessage(int count)
         {
@@ -119,6 +160,21 @@ namespace musii.Music
                 Title = $"The queue was cleared.",
                 Description =
                     $"`{count}` songs were removed. The playlist is now empty.",
+                Footer = footer
+            }.Build();
+        }
+        public static Embed FinishedPlayingMessage()
+        {
+            var footer = new EmbedFooterBuilder()
+            {
+                Text = $"The bot will leave the channel"
+            };
+            return new EmbedBuilder()
+            {
+                Color = Color.Green,
+                Title = $"The Playlist is empty",
+                Description =
+                    $"There are no more songs to play, you can turn on loop for constant playback.",
                 Footer = footer
             }.Build();
         }
@@ -334,7 +390,7 @@ namespace musii.Music
             }.Build();
         }
 
-        public static Embed GetQueueMessage(LavaPlayer music, bool looped, bool paused)
+        public static Embed GetQueueMessage(LavaPlayer music)
         {
             int min = Math.Min(20, music.Queue.Count);
             StringBuilder sb = new StringBuilder();
@@ -342,7 +398,7 @@ namespace musii.Music
 
             var cur = music.Track;
             sb.Append($"\n**In Queue:**\n");
-            var imn = l._list.Take(min);
+            var imn = l.InternalList.Take(min);
             imn = imn.Reverse();
             int cnt = min;
             foreach (var k in imn)
@@ -355,7 +411,7 @@ namespace musii.Music
 
             sb.Append($"**Now Playing:** `{cur.Title}`\n");
             sb.Append($"{GetProgress(cur.Position / cur.Duration)}\n");
-            sb.Append($"**{MessageSender.TimeSpanFormat(cur.Position)} / {MessageSender.TimeSpanFormat(cur.Duration)}**  {(paused ? "- **PAUSED**" : "")}\n");
+            sb.Append($"**{MessageSender.TimeSpanFormat(cur.Position)} / {MessageSender.TimeSpanFormat(cur.Duration)}**  {((music.PlayerState == PlayerState.Paused) ? "- **PAUSED**" : "")}\n");
 
             var footer = new EmbedFooterBuilder()
             {
@@ -364,7 +420,7 @@ namespace musii.Music
 
             return new EmbedBuilder
             {
-                Title = looped? $"Items In Queue (On Loop):" : $"Items In Queue:",
+                Title = music.Looped? $"Items In Queue (On Loop):" : $"Items In Queue:",
                 Color = Color.Blue,
                 Footer = footer,
                 Description = sb.ToString()

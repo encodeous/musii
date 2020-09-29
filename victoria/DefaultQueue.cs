@@ -11,7 +11,7 @@ namespace Victoria {
     /// </typeparam>
     public sealed class DefaultQueue<T> : IEnumerable<T> where T : ILavaTrack
     {
-        public readonly LinkedList<T> _list;
+        public LinkedList<T> InternalList;
         private readonly Random _random;
 
         /// <summary>
@@ -21,22 +21,22 @@ namespace Victoria {
         {
             get
             {
-                lock (_list) {
-                    return _list.Count;
+                lock (InternalList) {
+                    return InternalList.Count;
                 }
             }
         }
 
         /// <inheritdoc cref="DefaultQueue{T}" />
         public DefaultQueue() {
-            _list = new LinkedList<T>();
+            InternalList = new LinkedList<T>();
             _random = new Random();
         }
 
         /// <inheritdoc />
         public IEnumerator<T> GetEnumerator() {
-            lock (_list) {
-                for (var node = _list.First; node != null; node = node.Next) {
+            lock (InternalList) {
+                for (var node = InternalList.First; node != null; node = node.Next) {
                     yield return node.Value;
                 }
             }
@@ -57,8 +57,8 @@ namespace Victoria {
                 throw new ArgumentNullException(nameof(value));
             }
 
-            lock (_list) {
-                _list.AddLast(value);
+            lock (InternalList) {
+                InternalList.AddLast(value);
             }
         }
 
@@ -70,24 +70,24 @@ namespace Victoria {
         ///     <see cref="bool" />
         /// </returns>
         public bool TryDequeue(out T value) {
-            lock (_list) {
-                if (_list.Count < 1) {
+            lock (InternalList) {
+                if (InternalList.Count < 1) {
                     value = default;
                     return false;
                 }
 
-                if (_list.First == null) {
+                if (InternalList.First == null) {
                     value = default;
                     return true;
                 }
 
-                var result = _list.First.Value;
+                var result = InternalList.First.Value;
                 if (result == null) {
                     value = default;
                     return false;
                 }
 
-                _list.RemoveFirst();
+                InternalList.RemoveFirst();
                 value = result;
 
                 return true;
@@ -101,12 +101,12 @@ namespace Victoria {
         ///     Returns first item of type <see cref="IQueueable" />.
         /// </returns>
         public T Peek() {
-            lock (_list) {
-                if (_list.First == null) {
+            lock (InternalList) {
+                if (InternalList.First == null) {
                     throw new Exception("Returned value is null.");
                 }
 
-                return _list.First.Value;
+                return InternalList.First.Value;
             }
         }
 
@@ -119,8 +119,8 @@ namespace Victoria {
                 throw new ArgumentNullException(nameof(value));
             }
 
-            lock (_list) {
-                _list.Remove(value);
+            lock (InternalList) {
+                InternalList.Remove(value);
             }
         }
 
@@ -128,8 +128,8 @@ namespace Victoria {
         ///     Clears the queue.
         /// </summary>
         public void Clear() {
-            lock (_list) {
-                _list.Clear();
+            lock (InternalList) {
+                InternalList.Clear();
             }
         }
 
@@ -137,14 +137,14 @@ namespace Victoria {
         ///     Shuffles all the items in the queue.
         /// </summary>
         public void Shuffle() {
-            lock (_list) {
-                if (_list.Count < 2) {
+            lock (InternalList) {
+                if (InternalList.Count < 2) {
                     return;
                 }
 
-                var shadow = new T[_list.Count];
+                var shadow = new T[InternalList.Count];
                 var i = 0;
-                for (var node = _list.First; !(node is null); node = node.Next) {
+                for (var node = InternalList.First; !(node is null); node = node.Next) {
                     var j = _random.Next(i + 1);
                     if (i != j) {
                         shadow[i] = shadow[j];
@@ -154,9 +154,9 @@ namespace Victoria {
                     i++;
                 }
 
-                _list.Clear();
+                InternalList.Clear();
                 foreach (var value in shadow) {
-                    _list.AddLast(value);
+                    InternalList.AddLast(value);
                 }
             }
         }
@@ -169,8 +169,8 @@ namespace Victoria {
         ///     Returns the removed item.
         /// </returns>
         public T RemoveAt(int index) {
-            lock (_list) {
-                var currentNode = _list.First;
+            lock (InternalList) {
+                var currentNode = InternalList.First;
 
                 for (var i = 0; i <= index && currentNode != null; i++) {
                     if (i != index) {
@@ -178,7 +178,7 @@ namespace Victoria {
                         continue;
                     }
 
-                    _list.Remove(currentNode);
+                    InternalList.Remove(currentNode);
                     break;
                 }
 
@@ -210,8 +210,8 @@ namespace Victoria {
 
             var tempIndex = 0;
             var removed = new T[count];
-            lock (_list) {
-                var currentNode = _list.First;
+            lock (InternalList) {
+                var currentNode = InternalList.First;
                 while (tempIndex != index && currentNode != null) {
                     tempIndex++;
                     currentNode = currentNode.Next;
@@ -222,7 +222,7 @@ namespace Victoria {
                     var tempValue = currentNode.Value;
                     removed[i] = tempValue;
 
-                    _list.Remove(currentNode);
+                    InternalList.Remove(currentNode);
                     currentNode = nextNode;
                     nextNode = nextNode?.Next;
                 }

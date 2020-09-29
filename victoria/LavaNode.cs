@@ -58,7 +58,7 @@ namespace Victoria {
 		private readonly HttpClient _httpClient;
 		private readonly JsonSerializerOptions _jsonOptions;
 		private readonly LavaSocket _lavaSocket;
-		private readonly ConcurrentDictionary<ulong, TPlayer> _playerCache;
+		public readonly ConcurrentDictionary<ulong, TPlayer> _playerCache;
 		private readonly BaseSocketClient _socketClient;
 
 		private bool _refConnected;

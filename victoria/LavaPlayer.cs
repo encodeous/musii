@@ -29,7 +29,7 @@ namespace Victoria {
         /// <summary>
         ///     Default queue.
         /// </summary>
-        public DefaultQueue<ILavaTrack> Queue { get; private set; }
+        public DefaultQueue<ILavaTrack> Queue { get; set; }
 
         /// <summary>
         ///     Channel bound to this player.
@@ -60,6 +60,8 @@ namespace Victoria {
         ///     Player's current volume.
         /// </summary>
         public int Volume { get; private set; } = 100;
+
+        public bool Looped;
 
         private readonly IDictionary<int, EqualizerBand> _equalizer;
 

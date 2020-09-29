@@ -44,16 +44,23 @@ namespace Victoria
         {
             if (_loaded) return;
             _loaded = true;
-            var response = _node.SearchYouTubeAsync(LazyQueryString).Result.Tracks[0];
-            _author = response.Author;
-            _canSeek = response.CanSeek;
-            _duration = response.Duration;
-            _hash = response.Hash;
-            _id = response.Id;
-            _isStream = response.IsStream;
-            _position = response.Position;
-            OriginalTitle = response.Title;
-            _url = response.Url;
+            try
+            {
+                var response = _node.SearchAsync(LazyQueryString).Result.Tracks[0];
+                _author = response.Author;
+                _canSeek = response.CanSeek;
+                _duration = response.Duration;
+                _hash = response.Hash;
+                _id = response.Id;
+                _isStream = response.IsStream;
+                _position = response.Position;
+                OriginalTitle = response.Title;
+                _url = response.Url;
+            }
+            catch
+            {
+                _hash = null;
+            }
         }
 
     }

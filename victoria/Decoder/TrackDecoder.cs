@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers.Text;
+using System.IO;
 using System.Text;
 
 namespace Victoria.Decoder {
@@ -38,7 +39,7 @@ namespace Victoria.Decoder {
                 url: javaReader.Read<bool>()
                     ? javaReader.ReadString()
                     : string.Empty,
-                position: default,
+                position: TimeSpan.Zero, 
                 canSeek: true);
 
             return track;

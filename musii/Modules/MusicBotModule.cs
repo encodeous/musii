@@ -6,13 +6,21 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using musii.Music;
+using musii.Service;
 using Newtonsoft.Json;
 
 namespace musii.Modules
 {
     public class MusicBotModule : ModuleBase<SocketCommandContext>
     {
+        private MusicPlayerService _playerService;
+
+        public MusicBotModule(MusicPlayerService svc)
+        {
+            _playerService = svc;
+        }
         public static Dictionary<ulong, DateTime> Cooldown = new Dictionary<ulong, DateTime>();
+        public static HashSet<ulong> LockedGuilds = new HashSet<ulong>();
         bool VerifyCooldowns(int seconds)
         {
             if (!Program.AuthorizedGuilds.ContainsKey(Context.Guild.Id))
@@ -36,7 +44,7 @@ namespace musii.Modules
 
         bool CheckPermissions()
         {
-            if (MusicManager.GetPlayer(Context).Locked && !Context.Guild.GetUser(Context.User.Id).GuildPermissions.ManageMessages && Context.User.Id != 236596516423204865)
+            if (LockedGuilds.Contains(Context.Guild.Id) && !Context.Guild.GetUser(Context.User.Id).GuildPermissions.ManageMessages && Context.User.Id != 236596516423204865)
             {
                 ReplyAsync(embed: TextInterface.Locked());
                 return true;
@@ -70,7 +78,7 @@ namespace musii.Modules
             if(VerifyCooldowns(1)) return Task.CompletedTask;
             if (CheckPermissions()) return Task.CompletedTask;
             //return player.Play(Context, keywords);
-            return MusicManager.GetPlayer(Context).PlayAsync(Context, keywords);
+            return _playerService.PlaySongAsync(Context, keywords);
         }
         
         [Command("skip",  RunMode = RunMode.Async), Alias("s")] 
@@ -79,7 +87,7 @@ namespace musii.Modules
             if (VerifyCooldowns(1)) return Task.CompletedTask;
             if (CheckPermissions()) return Task.CompletedTask;
             //return player.Skip(Context, 1);
-            return MusicManager.GetPlayer(Context).SkipMusicAsync(1, Context);
+            return _playerService.SkipMusicAsync(1, Context);
         }
         [Command("skip",  RunMode = RunMode.Async), Alias("s")] 
         public Task Skip(int cnt)
@@ -87,7 +95,7 @@ namespace musii.Modules
             if (VerifyCooldowns(1)) return Task.CompletedTask;
             if (CheckPermissions()) return Task.CompletedTask;
             //return player.Skip(Context, cnt);
-            return MusicManager.GetPlayer(Context).SkipMusicAsync(cnt, Context);
+            return _playerService.SkipMusicAsync(cnt, Context);
         }
         [Command("leave",  RunMode = RunMode.Async), Alias("empty","clear","c","stop")] 
         public Task Clear()
@@ -95,14 +103,14 @@ namespace musii.Modules
             if (VerifyCooldowns(1)) return Task.CompletedTask;
             if (CheckPermissions()) return Task.CompletedTask;
             //return player.Clear(Context);
-            return MusicManager.GetPlayer(Context).ClearMusicAsync(Context);
+            return _playerService.ClearMusicAsync(Context);
         }
         [Command("queue",  RunMode = RunMode.Async), Alias("q","next")] 
         public Task Queue()
         {
             if (VerifyCooldowns(1)) return Task.CompletedTask;
             //return player.ShowQueue(Context);
-            return MusicManager.GetPlayer(Context).GetQueueAsync(Context);
+            return _playerService.GetQueueAsync(Context);
         }
         [Command("seek", RunMode = RunMode.Async), Alias("m", "move", "set")]
         public Task Seek(string time)
@@ -117,15 +125,15 @@ namespace musii.Modules
                 res = Math.Abs(res);
                 if (c == 's')
                 {
-                    return MusicManager.GetPlayer(Context).SeekMusicAsync(Context, TimeSpan.FromSeconds(res), neg);
+                    return _playerService.SeekMusicAsync(Context, TimeSpan.FromSeconds(res), neg);
                 }
                 else if (c == 'm')
                 {
-                    return MusicManager.GetPlayer(Context).SeekMusicAsync(Context, TimeSpan.FromMinutes(res), neg);
+                    return _playerService.SeekMusicAsync(Context, TimeSpan.FromMinutes(res), neg);
                 }
                 else
                 {
-                    return MusicManager.GetPlayer(Context).SeekMusicAsync(Context, TimeSpan.FromHours(res), neg);
+                    return _playerService.SeekMusicAsync(Context, TimeSpan.FromHours(res), neg);
                 }
             }
             else
@@ -151,14 +159,14 @@ namespace musii.Modules
         {
             if (VerifyCooldowns(1)) return Task.CompletedTask;
             if (CheckPermissions()) return Task.CompletedTask;
-            return MusicManager.GetPlayer(Context).LoopMusicAsync(Context);
+            return _playerService.LoopMusicAsync(Context);
         }
         [Command("pause", RunMode = RunMode.Async), Alias("hold", "suspend","ps")]
         public Task Pause()
         {
             if (VerifyCooldowns(1)) return Task.CompletedTask;
             if (CheckPermissions()) return Task.CompletedTask;
-            return MusicManager.GetPlayer(Context).PauseMusicAsync(Context);
+            return _playerService.PauseMusicAsync(Context);
         }
 
         [Command("v", RunMode = RunMode.Async), Alias("volume", "vol")]
@@ -169,7 +177,7 @@ namespace musii.Modules
             if (amount > 1000 || amount < 0) await ReplyAsync("Invalid Volume");
             else
             {
-                await MusicManager.GetPlayer(Context).Player.UpdateVolumeAsync((ushort)amount);
+                await _playerService.GetPlayer(Context.Guild).UpdateVolumeAsync((ushort)amount);
                 await ReplyAsync("**Volume Set To:** `" + amount + "`%");
             }
         }
@@ -178,7 +186,7 @@ namespace musii.Modules
         {
             if (VerifyCooldowns(1)) return Task.CompletedTask;
             if (CheckPermissions()) return Task.CompletedTask;
-            return ReplyAsync("**Volume:** `"+MusicManager.GetPlayer(Context).Player.Volume+"`%");
+            return ReplyAsync("**Volume:** `"+ _playerService.GetPlayer(Context.Guild).Volume+"`%");
         }
 
         [Command("shuffle", RunMode = RunMode.Async), Alias("r", "random", "mix")]
@@ -186,7 +194,7 @@ namespace musii.Modules
         {
             if (VerifyCooldowns(1)) return Task.CompletedTask;
             if (CheckPermissions()) return Task.CompletedTask;
-            return MusicManager.GetPlayer(Context).ShuffleMusicAsync(Context);
+            return _playerService.ShuffleMusicAsync(Context);
         }
 
         [Command("lock", RunMode = RunMode.Async)]
@@ -196,13 +204,14 @@ namespace musii.Modules
             if (Context.Guild.GetUser(Context.User.Id).GuildPermissions.ManageMessages ||
                 Context.User.Id == 236596516423204865)
             {
-                MusicManager.GetPlayer(Context).Locked = !MusicManager.GetPlayer(Context).Locked;
-                if (MusicManager.GetPlayer(Context).Locked)
+                if (!LockedGuilds.Contains(Context.Guild.Id))
                 {
+                    LockedGuilds.Add(Context.Guild.Id);
                     return ReplyAsync(embed: TextInterface.LockOn());
                 }
                 else
                 {
+                    LockedGuilds.Remove(Context.Guild.Id);
                     return ReplyAsync(embed: TextInterface.LockOff());
                 }
             }

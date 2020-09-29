@@ -35,6 +35,36 @@ namespace musii.Music
             Program.MusicNode.OnTrackEnded += MusicNodeOnTrackEnded;
             Program.MusicNode.OnWebSocketClosed += MusicNodeOnWebSocketClosed;
             Program.MusicNode.OnTrackStuck += MusicNodeOnTrackStuck;
+            Program.MusicNode.OnTrackException += MusicNodeOnTrackException;
+        }
+
+        private async Task MusicNodeOnTrackException(TrackExceptionEventArgs arg)
+        {
+            if (arg.Player == Player)
+            {
+                arg.ErrorMessage.Log();
+                var q = Player.Queue;
+                var channel = Player.VoiceChannel;
+                var tchannel = Player.TextChannel;
+                await Program.MusicNode.LeaveAsync(channel);
+                await Task.Delay(100);
+                try
+                {
+                    await tchannel.SendMessageAsync(embed: TextInterface.NotFoundMessage(Player.Track.Title));
+                    var newPlayer = await Program.MusicNode.JoinAsync(channel, tchannel);
+                    Player = newPlayer;
+                    foreach (var k in q.InternalList)
+                    {
+                        Player.Queue.Enqueue(k);
+                    }
+
+                    await CheckLeave();
+                }
+                catch
+                {
+
+                }
+            }
         }
 
         private async Task MusicNodeOnTrackStuck(TrackStuckEventArgs arg)
@@ -51,11 +81,12 @@ namespace musii.Music
                 {
                     var newPlayer = await Program.MusicNode.JoinAsync(channel, tchannel);
                     Player = newPlayer;
-                    await Player.PlayAsync(track);
-                    foreach (var k in q._list)
+                    Player.Queue.Enqueue(track);
+                    foreach (var k in q.InternalList)
                     {
                         Player.Queue.Enqueue(k);
                     }
+                    await Playback();
                 }
                 catch
                 {
@@ -75,37 +106,58 @@ namespace musii.Music
 
         private async Task MusicNodeOnWebSocketClosed(WebSocketClosedEventArgs arg)
         {
-            if (Player != null && arg.GuildId == Guild && arg.ByRemote)
+            if (Player != null && arg.GuildId == Guild)
             {
-                var q = Player.Queue;
-                var track = Player.Track;
-                var channel = Program._client.GetGuild(Guild).GetVoiceChannel(Player.VoiceChannel.Id);
-                var tchannel = Player.TextChannel;
-                try
+                
+                if (arg.Code == 4014 || arg.Code == 4011)
                 {
-                    await Program.MusicNode.LeaveAsync(channel);
-                    await Task.Delay(100);
-                    var newPlayer = await Program.MusicNode.JoinAsync(channel, tchannel);
-                    Player = newPlayer;
-                    await Player.PlayAsync(track);
-                    foreach (var k in q._list)
-                    {
-                        Player.Queue.Enqueue(k);
-                    }
-                }
-                catch
-                {
+                    await Player.TextChannel.SendMessageAsync(Config.Name + " has been disconnected by a moderator.");
                     try
                     {
-                        await Program.MusicNode.LeaveAsync(channel);
+                        await Program.MusicNode.LeaveAsync(Player.VoiceChannel);
                     }
                     catch
                     {
 
                     }
+
                     Player = null;
-                    await tchannel.SendMessageAsync(
-                        "An unknown error occurred, the bot is not able to join the voice channel.");
+                }
+                else if(arg.ByRemote)
+                {
+                    // Discord Network Error
+                    var q = Player.Queue;
+                    var track = Player.Track;
+                    var channel = Program._client.GetGuild(Guild).GetVoiceChannel(Player.VoiceChannel.Id);
+                    var tchannel = Player.TextChannel;
+                    try
+                    {
+                        await Program.MusicNode.LeaveAsync(channel);
+                        await Task.Delay(1000);
+                        var newPlayer = await Program.MusicNode.JoinAsync(channel, tchannel);
+                        Player = newPlayer;
+                        Player.Queue.Enqueue(track);
+                        foreach (var k in q.InternalList)
+                        {
+                            Player.Queue.Enqueue(k);
+                        }
+
+                        await Playback();
+                    }
+                    catch
+                    {
+                        try
+                        {
+                            await Program.MusicNode.LeaveAsync(channel);
+                        }
+                        catch
+                        {
+
+                        }
+                        Player = null;
+                        await tchannel.SendMessageAsync(
+                            "An unknown error occurred, the bot is not able to join the voice channel.");
+                    }
                 }
             }
         }
@@ -119,15 +171,21 @@ namespace musii.Music
                     Player.Queue.Enqueue(arg.Track);
                 }
 
-                if (Player.Queue.Count == 0)
-                {
-                    await Program.MusicNode.LeaveAsync(Player.VoiceChannel);
-                    Player = null;
-                }
-                else
-                {
-                    Playback();
-                }
+                await CheckLeave();
+            }
+        }
+
+        public async Task CheckLeave()
+        {
+            if (Player.Queue.Count == 0)
+            {
+                await Player.TextChannel.SendMessageAsync(embed: TextInterface.FinishedPlayingMessage());
+                await Program.MusicNode.LeaveAsync(Player.VoiceChannel);
+                Player = null;
+            }
+            else
+            {
+                await Playback();
             }
         }
 
@@ -146,7 +204,7 @@ namespace musii.Music
 
         public async Task SeekMusicAsync(SocketCommandContext context, TimeSpan delta, bool reverse)
         {
-            if (Player == null || Player.PlayerState == PlayerState.Stopped)
+            if (Player == null || Player.PlayerState == PlayerState.Stopped || Player.PlayerState == PlayerState.Disconnected)
             {
                 await context.Channel.SendMessageAsync(embed: TextInterface.NoMusic()).ConfigureAwait(false);
                 return;
@@ -167,7 +225,7 @@ namespace musii.Music
         }
         public async Task PauseMusicAsync(SocketCommandContext context)
         {
-            if (Player == null || Player.PlayerState == PlayerState.Stopped)
+            if (Player == null || Player.PlayerState == PlayerState.Stopped || Player.PlayerState == PlayerState.Disconnected)
             {
                 await context.Channel.SendMessageAsync(embed: TextInterface.NoMusic()).ConfigureAwait(false);
                 return;
@@ -186,7 +244,7 @@ namespace musii.Music
         }
         public async Task ShuffleMusicAsync(SocketCommandContext context)
         {
-            if (Player == null || Player.PlayerState == PlayerState.Stopped)
+            if (Player == null || Player.PlayerState == PlayerState.Stopped || Player.PlayerState == PlayerState.Disconnected)
             {
                 await context.Channel.SendMessageAsync(embed: TextInterface.NoMusic()).ConfigureAwait(false);
                 return;
@@ -205,7 +263,7 @@ namespace musii.Music
                     .ConfigureAwait(false);
                 return;
             }
-            if (Player == null || Player.PlayerState == PlayerState.Stopped)
+            if (Player == null || Player.PlayerState == PlayerState.Stopped || Player.PlayerState == PlayerState.Disconnected)
             {
                 await context.Channel.SendMessageAsync(embed: TextInterface.NoMusic()).ConfigureAwait(false);
                 return;
@@ -239,7 +297,7 @@ namespace musii.Music
                 await channel.SendMessageAsync($"You must be in a voice channel to execute this command!").ConfigureAwait(false);
                 return;
             }
-            if (Player == null || Player.PlayerState == PlayerState.Stopped)
+            if (Player == null || Player.PlayerState == PlayerState.Stopped || Player.PlayerState == PlayerState.Disconnected)
             {
                 await context.Channel.SendMessageAsync(embed: TextInterface.NoMusic()).ConfigureAwait(false);
                 return;
@@ -265,7 +323,7 @@ namespace musii.Music
                 await channel.SendMessageAsync($"You must be in a voice channel to execute this command!").ConfigureAwait(false);
                 return;
             }
-            if (Player == null || Player.PlayerState == PlayerState.Stopped)
+            if (Player == null || Player.PlayerState == PlayerState.Stopped || Player.PlayerState == PlayerState.Disconnected)
             {
                 await context.Channel.SendMessageAsync(embed: TextInterface.NoMusic()).ConfigureAwait(false);
                 return;
@@ -283,13 +341,22 @@ namespace musii.Music
                 return;
             }
 
-            if (Player == null || Player.PlayerState == PlayerState.Stopped)
+            if (Player == null || Player.PlayerState == PlayerState.Stopped || Player.PlayerState == PlayerState.Disconnected)
             {
                 int cnt = 0;
-                while (Player == null || Player.PlayerState == PlayerState.Stopped)
+                try
                 {
+                    await Program.MusicNode.LeaveAsync(voiceChannel);
+                }
+                catch
+                {
+
+                }
+                while (Player == null || Player.PlayerState == PlayerState.Stopped || Player.PlayerState == PlayerState.Disconnected)
+                {
+                    Program.MusicNode._playerCache.TryRemove(context.Guild.Id, out _);
                     Player = await Program.MusicNode.JoinAsync(voiceChannel, channel as ITextChannel);
-                    await Task.Delay(100);
+                    await Task.Delay(1000);
                     cnt++;
                     if (cnt >= 5)
                     {
@@ -302,7 +369,7 @@ namespace musii.Music
                         {
 
                         }
-
+                        Program.MusicNode._playerCache.TryRemove(context.Guild.Id, out _);
                         Player = null;
                         return;
                     }
@@ -315,71 +382,82 @@ namespace musii.Music
             }
             if (ResourceLocator.IsPlaylist(keywords))
             {
-                await QueuePlaylist(keywords[0]);
+                await QueuePlaylist(context, keywords[0]);
             }
             else if (ResourceLocator.IsVideo(keywords))
             {
-                await QueueVideo(keywords[0]);
+                await QueueVideo(context, keywords[0]);
             }
             else if (SpotifyController.ParsePlaylist(keywords[0]) != "")
             {
                 var playlist = await SpotifyController.GetPlaylist(keywords[0]);
                 if (playlist == null)
                 {
+                    await CheckLeave();
                     await channel.SendMessageAsync(embed: TextInterface.NotFoundMessage(keywords[0]));
                 }
 
-                await QueueSpotifyPlaylist(playlist);
+                await QueueSpotifyPlaylist(context, playlist);
             }
             else if (SpotifyController.ParseAlbum(keywords[0]) != "")
             {
                 var album = await SpotifyController.GetAlbum(keywords[0]);
                 if (album == null)
                 {
+                    await CheckLeave();
                     await channel.SendMessageAsync(embed: TextInterface.NotFoundMessage(keywords[0]));
                 }
-                await QueueSpotifyAlbum(album);
+                await QueueSpotifyAlbum(context, album);
             }
             else if (SpotifyController.ParseTrack(keywords[0]) != "")
             {
                 var track = await SpotifyController.GetTrack(keywords[0]);
                 if (track == null)
                 {
+                    await CheckLeave();
                     await channel.SendMessageAsync(embed: TextInterface.NotFoundMessage(keywords[0]));
                 }
-                await QueueSpotifyTrack(track);
+                await QueueSpotifyTrack(context, track);
             }
             else
             {
-                await SearchVideo(keywords);
+                await SearchVideo(context, keywords);
             }
         }
         private YoutubeClient _guildMusicQuery = new YoutubeClient();
-        private async Task QueuePlaylist(string link)
+        private async Task QueuePlaylist(SocketCommandContext context, string link)
         {
-            var playlist = PlaylistId.TryParse(link).Value;
-            var videos = _guildMusicQuery.Playlists.GetVideosAsync(playlist.Value);
-            int cnt = 0;
-
-            await foreach (var vid in videos)
+            try
             {
-                var ltrack = new LavaLazyTrack(vid.Title + " " + vid.Author, Program.MusicNode)
+                var playlist = PlaylistId.TryParse(link).Value;
+                var videos = _guildMusicQuery.Playlists.GetVideosAsync(playlist.Value);
+                int cnt = 0;
+
+                await foreach (var vid in videos)
                 {
-                    OriginalTitle = vid.Title
-                };
-                Player.Queue.Enqueue(ltrack);
-                cnt++;
-                if (cnt >= 500)
-                {
-                    break;
+                    var ltrack = new LavaLazyTrack(vid.Id.Value, Program.MusicNode)
+                    {
+                        OriginalTitle = vid.Title
+                    };
+                    Player.Queue.Enqueue(ltrack);
+                    cnt++;
+                    if (cnt >= 500)
+                    {
+                        break;
+                    }
                 }
+
+                await context.Channel.SendMessageAsync(embed: TextInterface.QueuedSongsMessage(cnt));
+
+                await Playback();
             }
-
-            await Player.TextChannel.SendMessageAsync(embed: TextInterface.QueuedSongsMessage(cnt));
-
-            Playback();
+            catch
+            {
+                await CheckLeave();
+                await context.Channel.SendMessageAsync(embed: TextInterface.NotFoundMessage(link));
+            }
         }
-        private async Task QueueSpotifyPlaylist(FullPlaylist list)
+        private async Task QueueSpotifyPlaylist(SocketCommandContext context, FullPlaylist list)
         {
             var tracks = list.Tracks.Items;
             int cnt = 0;
@@ -388,7 +466,7 @@ namespace musii.Music
             {
                 if (playlistTrack.Track is FullTrack track)
                 {
-                    var query = track.Name + " ";
+                    var query = "ytsearch:" + track.Name + " ";
                     foreach (var a in track.Artists)
                     {
                         query += a.Name + " ";
@@ -405,18 +483,18 @@ namespace musii.Music
                     }
                 }
             }
-            await Player.TextChannel.SendMessageAsync(embed: TextInterface.QueuedSongsMessage(cnt));
+            await context.Channel.SendMessageAsync(embed: TextInterface.QueuedSongsMessage(cnt));
 
-            Playback();
+            await Playback();
         }
-        private async Task QueueSpotifyAlbum(FullAlbum list)
+        private async Task QueueSpotifyAlbum(SocketCommandContext context, FullAlbum list)
         {
             var tracks = list.Tracks.Items;
             int cnt = 0;
 
             foreach (var track in tracks)
             {
-                var query = track.Name + " ";
+                var query = "ytsearch:" + track.Name + " ";
                 foreach (var a in track.Artists)
                 {
                     query += a.Name + " ";
@@ -432,28 +510,36 @@ namespace musii.Music
                     break;
                 }
             }
-            await Player.TextChannel.SendMessageAsync(embed: TextInterface.QueuedSongsMessage(cnt));
+            await context.Channel.SendMessageAsync(embed: TextInterface.QueuedSongsMessage(cnt));
 
-            Playback();
+            await Playback();
         }
-        private async Task QueueVideo(string link)
+        private async Task QueueVideo(SocketCommandContext context, string link)
         {
-            var id = VideoId.TryParse(link).Value;
-            var vid = await _guildMusicQuery.Videos.GetAsync(id);
-            var ltrack = new LavaLazyTrack(vid.Title + " " + vid.Author, Program.MusicNode)
+            try
             {
-                OriginalTitle = vid.Title
-            };
+                var id = VideoId.TryParse(link).Value;
+                var vid = await _guildMusicQuery.Videos.GetAsync(id);
+                var ltrack = new LavaLazyTrack(vid.Id.Value, Program.MusicNode)
+                {
+                    OriginalTitle = vid.Title
+                };
 
-            await Player.TextChannel.SendMessageAsync(embed: TextInterface.QueuedSongMessage(ltrack, Player, vid.Thumbnails.StandardResUrl));
+                await context.Channel.SendMessageAsync(embed: TextInterface.QueuedSongMessage(ltrack, Player, vid.Thumbnails.StandardResUrl));
 
-            Player.Queue.Enqueue(ltrack);
+                Player.Queue.Enqueue(ltrack);
 
-            Playback();
+                await Playback();
+            }
+            catch
+            {
+                await CheckLeave();
+                await context.Channel.SendMessageAsync(embed: TextInterface.NotFoundMessage(link));
+            }
         }
-        private async Task QueueSpotifyTrack(FullTrack track)
+        private async Task QueueSpotifyTrack(SocketCommandContext context, FullTrack track)
         {
-            var query = track.Name + " ";
+            var query = "ytsearch:" + track.Name + " ";
             foreach (var a in track.Artists)
             {
                 query += a.Name + " ";
@@ -465,48 +551,57 @@ namespace musii.Music
 
             if (Player.Track != null)
             {
-                await Player.TextChannel.SendMessageAsync(embed: TextInterface.QueuedSongMessage(ltrack, Player, track.PreviewUrl));
+                await context.Channel.SendMessageAsync(embed: TextInterface.QueuedSongMessage(ltrack, Player, track.PreviewUrl));
             }
 
             Player.Queue.Enqueue(ltrack);
 
-            Playback();
+            await Playback();
         }
-        private async Task SearchVideo(string[] keywords)
+        private async Task SearchVideo(SocketCommandContext context, string[] keywords)
         {
             string query = string.Join(' ', keywords);
-            var videos = _guildMusicQuery.Search.GetVideosAsync(query);
             try
             {
+                var videos = _guildMusicQuery.Search.GetVideosAsync(query);
                 var vid = await videos.FirstAsync().ConfigureAwait(false);
 
-                var ltrack = new LavaLazyTrack(vid.Title + " " + vid.Author, Program.MusicNode)
+                var ltrack = new LavaLazyTrack(vid.Id.Value, Program.MusicNode)
                 {
                     OriginalTitle = vid.Title
                 };
 
                 if (Player.Track != null) 
                 {
-                    await Player.TextChannel.SendMessageAsync(embed: TextInterface.QueuedSongMessage(ltrack, Player, vid.Thumbnails.StandardResUrl));
+                    await context.Channel.SendMessageAsync(embed: TextInterface.QueuedSongMessage(ltrack, Player, vid.Thumbnails.StandardResUrl));
                 }
 
                 Player.Queue.Enqueue(ltrack);
 
-                Playback();
+                await Playback();
             }
             catch
             {
-                await Player.TextChannel.SendMessageAsync(embed: TextInterface.NotFoundMessage(query));
+                await CheckLeave();
+                await context.Channel.SendMessageAsync(embed: TextInterface.NotFoundMessage(query));
             }
         }
 
-        private void Playback()
+        private async Task Playback()
         {
             if (Player.PlayerState != PlayerState.Paused && Player.PlayerState != PlayerState.Playing)
             {
                 if (Player.Queue.TryDequeue(out var val))
                 {
-                    _ = Player.PlayAsync(val).ConfigureAwait(false);
+                    if (val.Hash == null)
+                    {
+                        await Player.TextChannel.SendMessageAsync(embed: TextInterface.NotFoundMessage(val.Title));
+                        await CheckLeave();
+                    }
+                    else
+                    {
+                        _ = Player.PlayAsync(val).ConfigureAwait(false);
+                    }
                 }
             }
         }

@@ -21,7 +21,6 @@ namespace musii
         internal static DateTime StartTime = DateTime.Now;
         internal static DiscordSocketClient _client;
         internal static bool stop = false;
-        internal static LavaNode MusicNode;
         public static Dictionary<ulong,GuildInfo> AuthorizedGuilds = new Dictionary<ulong, GuildInfo>();
 
         public static void Main(string[] args)
@@ -52,8 +51,6 @@ namespace musii
             Config.SpotifyClientId = _config["spotify_id"];
             Config.SpotifyClientSecret = _config["spotify_secret"];
 
-            _client.Ready += OnReadyAsync;
-
             await _client.StartAsync().ConfigureAwait(false);
 
             $"Bot started! Press Control + C to exit!".Log();
@@ -83,27 +80,6 @@ namespace musii
 
         }
 
-        private async Task OnReadyAsync()
-        {
-            MusicNode = new LavaNode(_client, new LavaConfig()
-            {
-
-            });
-            if (!MusicNode.IsConnected)
-            {
-                await MusicNode.ConnectAsync();
-            }
-            MusicNode.OnLog += arg => {
-                if (arg.Exception != null)
-                {
-                    arg.Exception.Message.Log();
-                    arg.Exception.StackTrace.Log();
-                }
-                arg.Message.Log();
-                return Task.CompletedTask;
-            };
-        }
-
         private void ConsoleOnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             //MusicBotModule.player.Stop();
@@ -120,6 +96,9 @@ namespace musii
                 .AddSingleton(_client)
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
+                .AddLavaNode(x => {
+                    x.SelfDeaf = false;
+                })
                 // Extra
                 .AddSingleton(_config)
                 // Add additional services here...
