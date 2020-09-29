@@ -2,5 +2,8 @@
   "token": "<token here>",
   "spotify_id": "<client id here>",
   "spotify_secret": "<secret here>",
-  "prefix": "!"
+  "prefix": "!",
+  "lavalink_url": "localhost",
+  "lavalink_port": "2333",
+  "lavalink_auth": "youshallnotpass"
 }

@@ -53,7 +53,6 @@ namespace musii.Service
                     _node.OnWebSocketClosed += NodeOnWebSocketClosed;
                     _node.OnLog += arg =>
                     {
-                        if (arg.Severity >= LogSeverity.Verbose) return Task.CompletedTask;
                         if (arg.Exception != null)
                         {
                             arg.Exception.Message.Log();
@@ -118,6 +117,7 @@ namespace musii.Service
         }
         private Task NodeOnTrackEnded(TrackEndedEventArgs arg)
         {
+            if(arg.Reason == TrackEndReason.LoadFailed) return Task.CompletedTask;
             if (arg.Player.Looped && arg.Reason == TrackEndReason.Finished)
             {
                 arg.Track.Position = TimeSpan.Zero;
@@ -125,10 +125,21 @@ namespace musii.Service
             }
             return CheckPlayerState(arg.Player);
         }
+
+        private string _prevErrorTrack;
         private async Task NodeOnTrackException(TrackExceptionEventArgs arg)
         {
-            arg.ErrorMessage.Log();
-            await arg.Player.TextChannel.SendMessageAsync(embed: TextInterface.InternalErrorMessage(arg.ErrorMessage));
+            if (arg.Track.Hash == _prevErrorTrack)
+            {
+                await CheckPlayerState(arg.Player);
+                arg.ErrorMessage.Log();
+                await arg.Player.TextChannel.SendMessageAsync(embed: TextInterface.InternalErrorMessage(arg.ErrorMessage));
+            }
+            else
+            {
+                _prevErrorTrack = arg.Track.Hash;
+                await arg.Player.PlayAsync(arg.Track);
+            }
         }
         private async Task HandleNodeReconnection()
         {
@@ -204,7 +215,7 @@ namespace musii.Service
                 }
                 else
                 {
-                    _ = player.PlayAsync(val).ConfigureAwait(false);
+                    await player.PlayAsync(val).ConfigureAwait(false);
                 }
             }
         }
@@ -354,7 +365,7 @@ namespace musii.Service
                 await channel.SendMessageAsync($"You must be in a voice channel to execute this command!").ConfigureAwait(false);
                 return;
             }
-            if (HasPlayer(context.Guild))
+            if (!HasPlayer(context.Guild))
             {
                 await context.Channel.SendMessageAsync(embed: TextInterface.NoMusic()).ConfigureAwait(false);
                 return;

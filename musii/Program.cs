@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using musii.Modules;
 using musii.Music;
+using musii.Service;
 using musii.Utilities;
 using Newtonsoft.Json;
 using Victoria;
@@ -96,8 +97,13 @@ namespace musii
                 .AddSingleton(_client)
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
+                .AddSingleton<MusicPlayerService>()
                 .AddLavaNode(x => {
                     x.SelfDeaf = false;
+                    x.Hostname = _config["lavalink_url"];
+                    x.Port = ushort.Parse(_config["lavalink_port"]);
+                    x.Authorization = _config["lavalink_auth"];
+                    x.LogSeverity = LogSeverity.Info;
                 })
                 // Extra
                 .AddSingleton(_config)

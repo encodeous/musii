@@ -23,7 +23,7 @@ namespace Victoria {
         /// <summary>
         ///     Server's IP/Hostname.
         /// </summary>
-        public string Hostname { get; set; } = "10.10.10.8";
+        public string Hostname { get; set; } = "localhost";
 
         /// <summary>
         ///     Log serverity for logging everything.
