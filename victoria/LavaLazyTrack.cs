@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Discord.WebSocket;
 
 namespace Victoria
@@ -59,7 +60,24 @@ namespace Victoria
             }
             catch
             {
-                _hash = null;
+                Task.Delay(100);
+                try
+                {
+                    var response = _node.SearchAsync(LazyQueryString).Result.Tracks[0];
+                    _author = response.Author;
+                    _canSeek = response.CanSeek;
+                    _duration = response.Duration;
+                    _hash = response.Hash;
+                    _id = response.Id;
+                    _isStream = response.IsStream;
+                    _position = response.Position;
+                    OriginalTitle = response.Title;
+                    _url = response.Url;
+                }
+                catch
+                {
+                    _hash = null;
+                }
             }
         }
 

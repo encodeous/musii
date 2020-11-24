@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Rest;
 using Discord.WebSocket;
 using Victoria.Enums;
 using Victoria.Payloads;
@@ -39,7 +40,7 @@ namespace Victoria {
         /// <summary>
         ///     Current track that is playing.
         /// </summary>
-        public ILavaTrack Track { get; internal set; }
+        public ILavaTrack Track { get; set; }
 
         /// <summary>
         ///     Voice channel this player is connected to.
@@ -59,9 +60,11 @@ namespace Victoria {
         /// <summary>
         ///     Player's current volume.
         /// </summary>
-        public int Volume { get; private set; } = 100;
+        public int Volume { get; set; } = 100;
 
         public bool Looped;
+
+        public RestUserMessage QueueMessage;
 
         private readonly IDictionary<int, EqualizerBand> _equalizer;
 

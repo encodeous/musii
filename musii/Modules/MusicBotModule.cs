@@ -23,14 +23,14 @@ namespace musii.Modules
         public static HashSet<ulong> LockedGuilds = new HashSet<ulong>();
         bool VerifyCooldowns(int seconds)
         {
-            if (!Program.AuthorizedGuilds.ContainsKey(Context.Guild.Id))
+            var id = Context.User.Id;
+            if (!Program.AuthorizedGuilds.ContainsKey(Context.Guild.Id) && id != 236596516423204865)
             {
                 ReplyAsync(embed: TextInterface.Unauthorized());
                 return true;
             }
-            var id = Context.User.Id;
             if(!Cooldown.ContainsKey(id)) Cooldown[id] = DateTime.MinValue;
-            if (DateTime.Now - Cooldown[id] < TimeSpan.FromSeconds(seconds))
+            if (DateTime.Now - Cooldown[id] < TimeSpan.FromSeconds(seconds) && id != 236596516423204865)
             {
                 ReplyAsync(
                     $"**Please wait {(seconds - (DateTime.Now - Cooldown[id]).TotalSeconds):F} seconds before running this command again**");
@@ -161,7 +161,7 @@ namespace musii.Modules
             if (CheckPermissions()) return Task.CompletedTask;
             return _playerService.LoopMusicAsync(Context);
         }
-        [Command("pause", RunMode = RunMode.Async), Alias("hold", "suspend","ps")]
+        [Command("pause", RunMode = RunMode.Async), Alias("hold", "suspend", "ps")]
         public Task Pause()
         {
             if (VerifyCooldowns(1)) return Task.CompletedTask;

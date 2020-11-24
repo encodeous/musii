@@ -31,6 +31,14 @@ namespace musii.Service
             _node = node;
             _client = client;
             _client.Ready += OnReadyAsync;
+            _client.Disconnected += ClientOnDisconnected;
+        }
+
+        private bool Disconnected = false;
+        private Task ClientOnDisconnected(Exception arg)
+        {
+            Disconnected = true;
+            return Task.CompletedTask;
         }
 
         // State Management Functions
@@ -49,8 +57,8 @@ namespace musii.Service
                     _node.OnTrackException += NodeOnTrackException;
                     _node.OnTrackEnded += NodeOnTrackEnded;
                     _node.OnTrackStuck += NodeOnTrackStuck;
-                    _node.OnTrackStarted += NodeOnTrackStarted;
                     _node.OnWebSocketClosed += NodeOnWebSocketClosed;
+                    _node.OnPlayerUpdated += NodeOnPlayerUpdated;
                     _node.OnLog += arg =>
                     {
                         if (arg.Exception != null)
@@ -69,31 +77,22 @@ namespace musii.Service
                 _globalLock = false;
             }
         }
+
+        private Task NodeOnPlayerUpdated(PlayerUpdateEventArgs arg)
+        {
+            arg.Player.QueueMessage?.ModifyAsync(x => { x.Embed = TextInterface.GetQueueMessage(arg.Player); });
+            return Task.CompletedTask;
+        }
+
         private async Task NodeOnWebSocketClosed(WebSocketClosedEventArgs arg)
         {
-            var player = GetPlayer(_client.GetGuild(arg.GuildId));
-            if (arg.Code == 4014 || arg.Code == 4011)
+            if(Disconnected) return;
+            if (arg.ByRemote)
             {
-                await player.TextChannel.SendMessageAsync(embed: TextInterface.StandardMessage(Config.Name + " has been disconnected by a moderator."));
-                try
+                var player = GetPlayer(_client.GetGuild(arg.GuildId));
+                if (arg.Code == 4014)
                 {
-                    await _node.LeaveAsync(player.VoiceChannel);
-                }
-                catch
-                {
-
-                }
-            }
-            else if (arg.ByRemote)
-            {
-                $"Guild Session Disconnected by Remote, response: {arg.Code}, guildid: {arg.GuildId}, reason: {arg.Reason}.".Log();
-                // Discord Network Error
-                try
-                {
-                    await ReconnectPlayerAsync(player);
-                }
-                catch
-                {
+                    await player.TextChannel.SendMessageAsync(embed: TextInterface.StandardMessage(Config.Name + " has been disconnected by a moderator."));
                     try
                     {
                         await _node.LeaveAsync(player.VoiceChannel);
@@ -102,18 +101,33 @@ namespace musii.Service
                     {
 
                     }
-                    await player.TextChannel.SendMessageAsync(embed: TextInterface.StandardMessage("An unknown error occurred, the bot is not able to join the voice channel."));
+                }
+                else
+                {
+                    $"Guild Session Disconnected by Remote, response: {arg.Code}, guildid: {arg.GuildId}, reason: {arg.Reason}.".Log();
+                    // Discord Network Error
+                    try
+                    {
+                        await ReconnectPlayerAsync(player);
+                    }
+                    catch
+                    {
+                        try
+                        {
+                            await _node.LeaveAsync(player.VoiceChannel);
+                        }
+                        catch
+                        {
+
+                        }
+                        await player.TextChannel.SendMessageAsync(embed: TextInterface.StandardMessage("An unknown error occurred, the bot is not able to rejoin the voice channel."));
+                    }
                 }
             }
         }
-        private Task NodeOnTrackStarted(TrackStartEventArgs arg)
-        {
-            return arg.Player.TextChannel.SendMessageAsync(
-                embed: TextInterface.NowPlayingMessage(arg.Track, arg.Player.VoiceChannel));
-        }
         private Task NodeOnTrackStuck(TrackStuckEventArgs arg)
         {
-            return ReconnectPlayerAsync(arg.Player);
+            return arg.Player.PlayAsync(arg.Track);
         }
         private Task NodeOnTrackEnded(TrackEndedEventArgs arg)
         {
@@ -122,6 +136,11 @@ namespace musii.Service
             {
                 arg.Track.Position = TimeSpan.Zero;
                 arg.Player.Queue.Enqueue(arg.Track);
+            }
+
+            if (arg.Reason == TrackEndReason.Finished && arg.Player.Queue.Count == 0)
+            {
+                arg.Player.TextChannel.SendMessageAsync(embed: TextInterface.FinishedPlayingMessage());
             }
             return CheckPlayerState(arg.Player);
         }
@@ -143,26 +162,43 @@ namespace musii.Service
         }
         private async Task HandleNodeReconnection()
         {
-            var players = new List<LavaPlayer>();
-            foreach (var k in _node._playerCache)
+            try
             {
-                try
+                _globalLock = true;
+                var players = new List<(LinkedList<ILavaTrack>, ITextChannel, IVoiceChannel, bool, int, ILavaTrack)>();
+                foreach (var k in _node._playerCache)
                 {
-                    await k.Value.TextChannel.SendMessageAsync(embed: TextInterface.ReconnectingMessage());
-                }
-                catch
-                {
+                    try
+                    {
+                        await k.Value.TextChannel.SendMessageAsync(embed: TextInterface.ReconnectingMessage());
+                    }
+                    catch
+                    {
 
+                    }
+
+                    var nq = new LinkedList<ILavaTrack>(k.Value.Queue);
+                    players.Add((nq, k.Value.TextChannel, k.Value.VoiceChannel, k.Value.Looped, k.Value.Volume, k.Value.Track));
                 }
-                players.Add(k.Value);
+                $"Disconnected, reconnecting {players.Count} guilds...".Log();
+                await _node.DisconnectAsync();
+
+                await Task.Delay(3000);
+
+                await _node.ConnectAsync();
+                foreach (var p in players)
+                {
+                    var player = new LavaPlayer(null, p.Item3, p.Item2)
+                    {
+                        Looped = p.Item4, Volume = p.Item5, Track = p.Item6, Queue = {InternalList = p.Item1}
+                    };
+                    await ReconnectPlayerAsync(player);
+                }
             }
-            $"Disconnected, reconnecting {players.Count} guilds...".Log();
-            await _node.DisconnectAsync();
-            await Task.Delay(100);
-            await _node.ConnectAsync();
-            foreach (var p in players)
+            finally
             {
-                await ReconnectPlayerAsync(p);
+                _globalLock = false;
+                Disconnected = false;
             }
         }
         private async Task ReconnectPlayerAsync(LavaPlayer player)
@@ -171,6 +207,9 @@ namespace musii.Service
             var vc = player.VoiceChannel;
             var tc = player.TextChannel;
             var q = player.Queue;
+            var loop = player.Looped;
+            var vol = player.Volume;
+            var paused = player.PlayerState == PlayerState.Paused;
             try
             {
                 await _node.LeaveAsync(vc);
@@ -181,7 +220,10 @@ namespace musii.Service
             }
             player = await _node.JoinAsync(vc, tc);
             player.Queue = q;
+            player.Looped = loop;
+            await player.UpdateVolumeAsync((ushort)vol);
             await player.PlayAsync(track);
+            if (paused) await player.PauseAsync();
         }
 
         // Playback Functions
@@ -189,7 +231,6 @@ namespace musii.Service
         {
             if (player.Queue.Count == 0)
             {
-                await player.TextChannel.SendMessageAsync(embed: TextInterface.FinishedPlayingMessage());
                 await _node.LeaveAsync(player.VoiceChannel);
             }
             else
@@ -372,7 +413,7 @@ namespace musii.Service
             }
 
             var player = GetPlayer(context.Guild);
-            await context.Channel.SendMessageAsync(embed: TextInterface.GetQueueMessage(player));
+            player.QueueMessage = await context.Channel.SendMessageAsync(embed: TextInterface.GetQueueMessage(player));
         }
         public async Task PlaySongAsync(SocketCommandContext context, string[] keywords)
         {
@@ -515,8 +556,8 @@ namespace musii.Service
                 var id = VideoId.TryParse(link).Value;
                 var vid = await _guildMusicQuery.Videos.GetAsync(id);
                 var ltrack = new LavaLazyTrack(vid.Id.Value, _node) {OriginalTitle = vid.Title};
-                if (player.Track != null) await player.TextChannel.SendMessageAsync(embed:
-                    TextInterface.QueuedSongMessage(ltrack, player, vid.Thumbnails.StandardResUrl));
+                await player.TextChannel.SendMessageAsync(embed:
+                    TextInterface.QueuedSongMessage(ltrack, player));
                 player.Queue.Enqueue(ltrack);
                 await Playback(player);
             }
@@ -535,8 +576,8 @@ namespace musii.Service
             }
             var ltrack = new LavaLazyTrack(query, _node) {OriginalTitle = track.Name};
 
-            if (player.Track != null) await player.TextChannel.SendMessageAsync(embed: 
-                TextInterface.QueuedSongMessage(ltrack, player, track.PreviewUrl));
+            await player.TextChannel.SendMessageAsync(embed: 
+                TextInterface.QueuedSongMessage(ltrack, player));
 
             player.Queue.Enqueue(ltrack);
             await Playback(player);
@@ -550,8 +591,8 @@ namespace musii.Service
                 var vid = await videos.FirstAsync().ConfigureAwait(false);
                 var ltrack = new LavaLazyTrack(vid.Id.Value, _node) {OriginalTitle = vid.Title};
 
-                if (player.Track != null) await player.TextChannel.SendMessageAsync(embed: 
-                    TextInterface.QueuedSongMessage(ltrack, player, vid.Thumbnails.StandardResUrl));
+                await player.TextChannel.SendMessageAsync(embed: 
+                    TextInterface.QueuedSongMessage(ltrack, player));
 
                 player.Queue.Enqueue(ltrack);
                 await Playback(player);

@@ -6,6 +6,7 @@ using Discord;
 using musii.Utilities;
 using Victoria;
 using Victoria.Enums;
+using Victoria.Resolvers;
 
 namespace musii.Music
 {
@@ -68,18 +69,19 @@ namespace musii.Music
                 Title = $"Now Playing `{playback.Title}`.",
                 Description =
                     $"Playing song `{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`] in `{channel.Name}`.",
+                ThumbnailUrl = ArtworkResolver.FetchAsync(playback).Result
             }.Build();
         }
 
-        public static Embed QueuedSongMessage(ILavaTrack playback, LavaPlayer player, string thumbnailUrl)
+        public static Embed QueuedSongMessage(ILavaTrack playback, LavaPlayer player)
         {
             return new EmbedBuilder()
             {
                 Color = Color.Blue,
                 Title = $"Queued Song `{playback.Title}`.",
                 Description = $"`{playback.Title}` [`{MessageSender.TimeSpanFormat(playback.Duration)}`.]\n" +
-                              $"The queue now has `{player.Queue.Count+1}` songs.", 
-                ThumbnailUrl = thumbnailUrl,
+                              $"The queue now has `{player.Queue.Count+1}` songs.",
+                ThumbnailUrl = ArtworkResolver.FetchAsync(playback).Result
             }.Build();
         }
 
@@ -392,6 +394,14 @@ namespace musii.Music
 
         public static Embed GetQueueMessage(LavaPlayer music)
         {
+            if (music?.Track == null)
+            {
+                return new EmbedBuilder
+                {
+                    Title = "Queue Is Empty",
+                    Color = Color.Blue
+                }.Build();
+            }
             int min = Math.Min(20, music.Queue.Count);
             StringBuilder sb = new StringBuilder();
             var l = music.Queue;
@@ -415,15 +425,15 @@ namespace musii.Music
 
             var footer = new EmbedFooterBuilder()
             {
-                Text = (min == music.Queue.Count) ? "Entire Playlist Shown." : $"Total {music.Queue.Count} songs."
+                Text = (min == music.Queue.Count) ? "Entire Playlist Shown." : $"Total {music.Queue.Count} songs.",
             };
 
             return new EmbedBuilder
             {
-                Title = music.Looped? $"Items In Queue (On Loop):" : $"Items In Queue:",
+                Title = music.Looped? $"Songs In Queue (On Loop):" : $"Songs In Queue:",
                 Color = Color.Blue,
                 Footer = footer,
-                Description = sb.ToString()
+                Description = sb.ToString(),
             }.Build();
         }
     }

@@ -211,6 +211,7 @@ namespace Victoria {
 
 			await _lavaSocket.DisconnectAsync()
 			   .ConfigureAwait(false);
+			Volatile.Write(ref _refConnected, false);
 		}
 
 		/// <summary>
@@ -394,7 +395,7 @@ namespace Victoria {
 			return SearchAsync($"scsearch:{query}");
 		}
 
-		/// <summary>
+        /// <summary>
 		///     Performs search on all enabled sources in configuration.
 		/// </summary>
 		/// <param name="query">Your search terms.</param>
