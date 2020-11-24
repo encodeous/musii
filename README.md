@@ -31,7 +31,7 @@ Musii received a major feature update in v3, and in v4 there are more features t
 You can setup your own private music player with Musii in a few simple steps.
 
 1. Setup [Lavalink](https://github.com/Frederikam/Lavalink) on your server or use [F4stZ4p/HLavalink](https://github.com/F4stZ4p/HLavalink)
-2. Clone and Compile Musii with `.NET Core 3.1`
+2. Clone the repository and Compile Musii. For more information on how to build .NET apps, visit [.NET Docs](https://docs.microsoft.com/en-us/dotnet/fundamentals/)
 3. Go to the [Discord Developer Portal](https://discord.com/developers/applications) and create a bot
 4. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/) and create an application
 5. Create a file called `config.json` in the bot directory if it doesn't exist
