@@ -132,7 +132,7 @@ namespace musii.Service
         private Task NodeOnTrackEnded(TrackEndedEventArgs arg)
         {
             if(arg.Reason == TrackEndReason.LoadFailed) return Task.CompletedTask;
-            if (arg.Player.Looped && arg.Reason == TrackEndReason.Finished)
+            if (arg.Player.Looped && (arg.Reason == TrackEndReason.Finished || arg.Reason == TrackEndReason.Stopped))
             {
                 arg.Track.Position = TimeSpan.Zero;
                 arg.Player.Queue.Enqueue(arg.Track);
@@ -210,6 +210,7 @@ namespace musii.Service
             var loop = player.Looped;
             var vol = player.Volume;
             var paused = player.PlayerState == PlayerState.Paused;
+            var msg = player.QueueMessage;
             try
             {
                 await _node.LeaveAsync(vc);
@@ -221,6 +222,7 @@ namespace musii.Service
             player = await _node.JoinAsync(vc, tc);
             player.Queue = q;
             player.Looped = loop;
+            player.QueueMessage = msg;
             await player.UpdateVolumeAsync((ushort)vol);
             await player.PlayAsync(track);
             if (paused) await player.PauseAsync();
