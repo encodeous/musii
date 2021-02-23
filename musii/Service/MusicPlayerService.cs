@@ -13,9 +13,6 @@ using SpotifyAPI.Web;
 using Victoria;
 using Victoria.Enums;
 using Victoria.EventArgs;
-using YoutubeExplode;
-using YoutubeExplode.Playlists;
-using YoutubeExplode.Videos;
 
 namespace musii.Service
 {
@@ -23,7 +20,6 @@ namespace musii.Service
     {
         private readonly LavaNode _node;
         private DiscordSocketClient _client;
-        private readonly YoutubeClient _guildMusicQuery = new YoutubeClient();
         private bool _globalLock;
 
         public MusicPlayerService(LavaNode node, DiscordSocketClient client)
@@ -498,12 +494,12 @@ namespace musii.Service
         {
             try
             {
-                var playlist = PlaylistId.TryParse(link).Value;
-                var videos = _guildMusicQuery.Playlists.GetVideosAsync(playlist.Value);
+                var ply = await _node.SearchAsync(link);
+                var videos = ply.Tracks;
                 int cnt = 0;
-                await foreach (var vid in videos)
+                foreach (var vid in videos)
                 {
-                    var ltrack = new LavaLazyTrack(vid.Id.Value, _node) {OriginalTitle = vid.Title};
+                    var ltrack = new LavaLazyTrack(vid.Id, _node) {OriginalTitle = vid.Title};
                     player.Queue.Enqueue(ltrack);
                     if (++cnt >= Config.MaxPlaylistLength) break;
                 }
@@ -555,9 +551,8 @@ namespace musii.Service
         {
             try
             {
-                var id = VideoId.TryParse(link).Value;
-                var vid = await _guildMusicQuery.Videos.GetAsync(id);
-                var ltrack = new LavaLazyTrack(vid.Id.Value, _node) {OriginalTitle = vid.Title};
+                var vid = (await _node.SearchAsync(link)).Tracks.First();
+                var ltrack = new LavaLazyTrack(vid.Id, _node) {OriginalTitle = vid.Title};
                 await player.TextChannel.SendMessageAsync(embed:
                     TextInterface.QueuedSongMessage(ltrack, player));
                 player.Queue.Enqueue(ltrack);
@@ -589,9 +584,9 @@ namespace musii.Service
             string query = string.Join(' ', keywords);
             try
             {
-                var videos = _guildMusicQuery.Search.GetVideosAsync(query);
-                var vid = await videos.FirstAsync().ConfigureAwait(false);
-                var ltrack = new LavaLazyTrack(vid.Id.Value, _node) {OriginalTitle = vid.Title};
+                var videos = await _node.SearchYouTubeAsync(query);
+                var vid = videos.Tracks.First();
+                var ltrack = new LavaLazyTrack(vid.Id, _node) {OriginalTitle = vid.Title};
 
                 await player.TextChannel.SendMessageAsync(embed: 
                     TextInterface.QueuedSongMessage(ltrack, player));
