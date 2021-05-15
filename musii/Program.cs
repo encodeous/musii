@@ -104,6 +104,7 @@ namespace musii
                     x.Port = ushort.Parse(_config["lavalink_port"]);
                     x.Authorization = _config["lavalink_auth"];
                     x.LogSeverity = LogSeverity.Info;
+                    x.IsSSL = bool.Parse(_config["lavalink_is_ssl"]);
                 })
                 // Extra
                 .AddSingleton(_config)

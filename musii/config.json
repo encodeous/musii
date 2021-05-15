@@ -5,5 +5,6 @@
   "prefix": "!",
   "lavalink_url": "localhost",
   "lavalink_port": "2333",
-  "lavalink_auth": "youshallnotpass"
+  "lavalink_auth": "youshallnotpass",
+  "lavalink_is_ssl": "true"
 }
