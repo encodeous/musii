@@ -85,19 +85,19 @@ namespace Encodeous.Musii.Network
             return null;
         }
         
-        public Track CreateSpotifyTrack(FullTrack track)
+        public SpotifySource CreateSpotifyTrack(FullTrack track)
         {
-            return new () {Source = new SpotifySource(track), Position = TimeSpan.Zero};
+            return new (track);
         }
         
-        public Track[] CreateSpotifyAlbum(FullAlbum album)
+        public SpotifySource[] CreateSpotifyAlbum(FullAlbum album)
         {
-            List<Track> requests = new List<Track>();
+            List<SpotifySource> requests = new List<SpotifySource>();
             var tracks = album.Tracks.Items;
             int cnt = 0;
             foreach (var track in tracks)
             {
-                requests.Add(new () {Source = new SpotifySource(track), Position = TimeSpan.Zero});
+                requests.Add(new (track));
                 cnt++;
                 if (cnt >= 500)
                 {
@@ -107,16 +107,16 @@ namespace Encodeous.Musii.Network
             return requests.ToArray();
         }
         
-        public Track[] CreateSpotifyPlaylist(FullPlaylist  album)
+        public SpotifySource[] CreateSpotifyPlaylist(FullPlaylist album)
         {
-            List<Track> requests = new List<Track>();
+            List<SpotifySource> requests = new List<SpotifySource>();
             var tracks = album.Tracks.Items;
             int cnt = 0;
             foreach (var ptrack in tracks)
             {
                 if (ptrack.Track is FullTrack track)
                 {
-                    requests.Add(new () {Source = new SpotifySource(track), Position = TimeSpan.Zero});
+                    requests.Add(new (track));
                     cnt++;
                     if (cnt >= 500)
                     {

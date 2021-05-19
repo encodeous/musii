@@ -8,8 +8,10 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.Lavalink;
+using DSharpPlus.Net;
 using DSharpPlus.VoiceNext;
-using Encodeous.DirtyProxy;
+using Encodeous.Musii.Data;
 using Encodeous.Musii.Network;
 using Encodeous.Musii.Player;
 using Microsoft.Extensions.Configuration;
@@ -17,7 +19,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Systemd;
 using Microsoft.Extensions.Logging;
-using YoutubeExplode;
 
 namespace Encodeous.Musii
 {
@@ -35,21 +36,18 @@ namespace Encodeous.Musii
                 .ConfigureServices(async (context, services) =>
                 {
                     // add services
-                    services.AddSingleton<ProxyService>();
                     services.AddSingleton<PlayerSessions>();
                     services.AddSingleton<SpotifyService>();
+                    services.AddSingleton<YoutubeService>();
                     // add discord
                     AddDiscord(context, services);
                     // per-play session services
-                    services.AddScoped<FFMpegService>();
-                    services.AddScoped<YoutubeService>();
+                    services.AddScoped<ScopeData>();
                     services.AddScoped<SearchService>();
                     services.AddScoped<MusicPlayer>();
                     // add application
                     services.AddHostedService<HostedBot>();
                 }).Build();
-            // warm up proxies
-            appHost.Services.GetService<ProxyService>();
             // setup application
             Setup(appHost.Services);
             await appHost.RunAsync();
@@ -86,19 +84,24 @@ namespace Encodeous.Musii
 
             // add services to discord
             
+            // command service
             var commands = client.UseCommandsNext(new ()
             { 
                 StringPrefixes = new[] { config["musii:DefaultPrefix"] },
                 Services = collection
             });
-            
             commands.RegisterCommands(Assembly.GetExecutingAssembly());
             commands.CommandErrored += (sender, args) =>
             {
                 log.LogError($"Exception occurred while executing command: {args.Exception}");
                 return Task.CompletedTask;
             };
+            
+            // lavalink 
 
+            client.UseLavalink();
+            
+            
             if (Directory.Exists("/etc/systemd/system/") && !SystemdHelpers.IsSystemdService())
             {
                 log.LogWarning("Musii has detected that your system has systemd. " +

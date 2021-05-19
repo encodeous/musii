@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ConcurrentCollections;
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using DSharpPlus.Lavalink;
 using Encodeous.Musii.Data;
 using Encodeous.Musii.Network;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,15 +20,13 @@ namespace Encodeous.Musii.Player
     /// </summary>
     public class PlayerSessions
     {
-        private ProxyService _proxy;
         private IServiceProvider _provider;
         private ConcurrentDictionary<ulong, MusicPlayer> _sessions = new();
         private ConcurrentDictionary<Guid, PlayerState> _states = new();
         private ConcurrentHashSet<ulong> _loadingSessions = new();
         private ILogger<PlayerSessions> _log;
-        public PlayerSessions(ProxyService proxy, IServiceProvider provider, ILogger<PlayerSessions> log)
+        public PlayerSessions(IServiceProvider provider, ILogger<PlayerSessions> log)
         {
-            _proxy = proxy;
             _provider = provider;
             _log = log;
         }
@@ -43,39 +43,41 @@ namespace Encodeous.Musii.Player
             return _states[id].CloneState();
         }
 
-        public async Task<MusicPlayer> GetOrCreateSession(CommandContext context)
+        public async Task<MusicPlayer> GetOrCreateSession(DiscordGuild guild, DiscordChannel voiceChannel, DiscordChannel textChannel)
         {
-            if (_sessions.ContainsKey(context.Guild.Id))
+            if (_sessions.ContainsKey(guild.Id))
             {
-                return _sessions[context.Guild.Id];
+                return _sessions[guild.Id];
             }
-            if (_loadingSessions.Contains(context.Guild.Id))
+            if (_loadingSessions.Contains(guild.Id))
             {
-                while (_loadingSessions.Contains(context.Guild.Id))
+                while (_loadingSessions.Contains(guild.Id))
                 {
                     await Task.Delay(50);
                 }
 
-                return _sessions[context.Guild.Id];
+                return _sessions[guild.Id];
             }
-
-            var cts = new CancellationTokenSource();
-            _loadingSessions.Add(context.Guild.Id);
+            _loadingSessions.Add(guild.Id);
             var scope = _provider.CreateScope();
-            var proxy = await _proxy.GetProxy(cts.Token);
-            var client = scope.ServiceProvider.GetRequiredService<YoutubeService>();
-            client.InitializeClient(proxy.EndPoint);
-            var player = scope.ServiceProvider.GetRequiredService<MusicPlayer>();
-            player.Proxy = proxy;
-            player.DeletePlayer = () =>
+            // setup playback data
+            var data = scope.ServiceProvider.GetRequiredService<ScopeData>();
+            data.TextChannel = textChannel;
+            data.VoiceChannel = voiceChannel;
+            data.DeletePlayerCallback = async () =>
             {
-                while(!_sessions.TryRemove(context.Guild.Id, out _)){}
-                cts.Cancel();
+                while (!_sessions.TryRemove(guild.Id, out _) && _sessions.ContainsKey(guild.Id))
+                {
+                    await Task.Delay(100);
+                }
             };
-            await player.Connect(context.Member.VoiceState.Channel, context.Channel);
-            _log.LogDebug($"Created session for guild {context.Guild.Id} using proxy {player.Proxy.EndPoint.Address}:{player.Proxy.EndPoint.Port}");
-            _sessions[context.Guild.Id] = player;
-            while (!_loadingSessions.TryRemove(context.Guild.Id)) await Task.Delay(10);
+            
+            var player = scope.ServiceProvider.GetRequiredService<MusicPlayer>();
+            await player.ConnectPlayer();
+            player.InitializeState(CreateState());
+            _log.LogDebug($"Created session for guild {guild.Id}");
+            _sessions[guild.Id] = player;
+            while (!_loadingSessions.TryRemove(guild.Id)) await Task.Delay(10);
             return player;
         }
     }

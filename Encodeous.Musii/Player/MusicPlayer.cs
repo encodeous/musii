@@ -6,8 +6,12 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.Lavalink;
+using DSharpPlus.Lavalink.EventArgs;
 using DSharpPlus.VoiceNext;
+using Emzi0767.Utilities;
 using Encodeous.Musii.Data;
 using Encodeous.Musii.Network;
 using Microsoft.Extensions.Logging;
@@ -22,180 +26,161 @@ namespace Encodeous.Musii.Player
         public SearchService Searcher;
         public bool IsInitialized { get; private set; }
         public bool IsPlaying { get; private set; }
-        // Set by PlayerSessions
-        internal ProxyWrapper Proxy;
-        internal Action DeletePlayer;
-        internal DiscordChannel Channel, TextChannel;
-        
-        private bool _isDisposed = false;
-        private VoiceNextConnection _connection;
-        private ILogger<MusicPlayer> _log;
-        private PlayerState _state;
-        private CancellationTokenSource _playTaskSwitch = new CancellationTokenSource();
-        private CancellationToken _playTask;
-        private FFMpegService _ffmpeg;
-        private HttpClient _client;
-        private VoiceTransmitSink _tsmSink;
 
-        public MusicPlayer(ILogger<MusicPlayer> log, FFMpegService ffmpeg, SearchService searcher)
+        public ScopeData Data;
+        private bool _isDisposed = false;
+        private ILogger<MusicPlayer> _log;
+        private DiscordClient _client;
+        public MusicPlayer(ILogger<MusicPlayer> log, SearchService searcher, ScopeData data, DiscordClient client)
         {
             _log = log;
-            _ffmpeg = ffmpeg;
             Searcher = searcher;
-            _playTask = _playTaskSwitch.Token;
+            Data = data;
+            _client = client;
         }
 
-        public async Task Connect(DiscordChannel channel, DiscordChannel textChannel)
+        public async Task ConnectPlayer()
         {
-            _client = new HttpClient(new HttpClientHandler()
-            {
-                Proxy = new WebProxy(Proxy.EndPoint.Address.ToString())
-            });
-            Channel = channel;
-            TextChannel = textChannel;
-            _connection = await channel.ConnectAsync();
-            await _connection.SendSpeakingAsync();
-            _connection.VoiceSocketErrored += (sender, args) =>
-            {
-                _log.LogDebug($"Client in channel {Channel.Name} Has exited with exception of: {args.Exception.Message}");
-                return Task.CompletedTask;
-            };
-            _connection.UserLeft += (sender, args) =>
-            {
-                _log.LogDebug($"User {args.User.Username} in channel {Channel.Name} has left");
-                return Task.CompletedTask;
-            };
-            Task.Run(async () =>
-            {
-                while (!_isDisposed)
-                {
-                    await Task.Delay(500);
-                    if ((bool) _connection.GetType().GetProperty("IsDisposed", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(_connection))
-                    {
-                        _log.LogDebug($"Client in channel {Channel.Name} has been disposed");
-                        Dispose();
-                        break;
-                    }
-                }
-            });
+            Data.LavalinkNode = await _client.GetLavalink().GetIdealNodeConnection().ConnectAsync(Data.VoiceChannel);
         }
-        
+
         /// <summary>
         /// Attach a state to the player (Allows for pause/resume, channel moving, auto-reconnections, session saving... etc)
         /// </summary>
         /// <param name="state"></param>
-        public async Task InitializeStateAsync(PlayerState state)
+        public void InitializeState(PlayerState state)
         {
             IsInitialized = true;
-            _state = state;
-            _playTaskSwitch?.Cancel();
+            Data.State = state;
         }
         
         /// <summary>
         /// Starts playing music, must already have a song!
         /// </summary>
-        public void StartPlaying()
+        public async Task StartPlaying()
         {
             if (IsPlaying) return;
-            if (_state?.CurrentTrack is null) throw new Exception("Music player started playing without a state!");
+            if (Data.State is null || (Data.State.CurrentTrack is null && !Data.State.Tracks.Any())) throw new Exception("Music player started playing without a state!");
             IsPlaying = true;
-            Task.Run(AudioPlayer);
+            Data.LavalinkNode.DiscordWebSocketClosed += async (sender, args) =>
+            {
+                if (!ReferenceEquals(Data.LavalinkNode, sender)) return;
+                await SaveSession();
+                if (args.Code == 4014)
+                {
+                    await Data.TextChannel.SendMessageAsync(Data.GenericError(
+                        "Disconnected by Moderator", "The bot will leave"));
+                    _log.LogDebug($"Bot voice websocket closed {args.Reason} with code {args.Code}");
+                    Dispose();
+                    return;
+                }
+                Dispose();
+            };
+            Data.LavalinkNode.PlaybackFinished += async (sender, args) =>
+            {
+                if (!ReferenceEquals(Data.LavalinkNode, sender)) return;
+                if (args.Reason == TrackEndReason.Finished)
+                {
+                    if (await MoveNextAsync())
+                    {
+                        await Play();
+                    }
+                }
+                if (args.Reason == TrackEndReason.LoadFailed)
+                {
+                    await Data.TextChannel.SendMessageAsync(Data.GenericError("Track load failed", 
+                        $"The track `{args.Track.Title}` is not able to be played!"));
+                    if (await MoveNextAsync())
+                    {
+                        await Play();
+                    }
+                }
+            };
+            Data.LavalinkNode.TrackException += async (sender, args) =>
+            {
+                if (!ReferenceEquals(Data.LavalinkNode, sender)) return;
+                await Play();
+                _log.LogError($"Playback encountered error {args.Error} in channel {args.Player.Channel}");
+            };
+            Data.LavalinkNode.TrackStuck += async (sender, args) =>
+            {
+                if (!ReferenceEquals(Data.LavalinkNode, sender)) return;
+                await Play();
+                _log.LogDebug($"Track stuck in channel {args.Player.Channel}");
+            };
+            Data.LavalinkNode.PlayerUpdated += (sender, args) =>
+            {
+                Data.State.CurrentTrack.SetPos((long) args.Position.TotalMilliseconds);
+                return Task.CompletedTask;
+            };
+            if(Data.State.CurrentTrack is null) await MoveNextAsync();
+            await Play();
         }
         
-        /// <summary>
-        /// All tracks have been played
-        /// </summary>
         private async Task PlaylistEndedAsync()
         {
-            await TextChannel.SendMessageAsync(Messages.PlaylistEmptyMessage(TextChannel));
-        }
-
-        public async Task AddTrack(Track track)
-        {
-            await TextChannel.SendMessageAsync(Messages.AddedTrackMessage(TextChannel, track));
-            await _state.StateLock.WaitAsync();
-            try
-            {
-                _state.Tracks.Add(track);
-            }
-            finally
-            {
-                _state.StateLock.Release();
-            }
+            await Data.TextChannel.SendMessageAsync(Data.PlaylistEmptyMessage());
         }
         
-        public async Task AddTracks(Track[] tracks)
+        private async Task SaveSession()
         {
-            await TextChannel.SendMessageAsync(Messages.AddedTracksMessage(TextChannel, tracks.Length));
-            await _state.StateLock.WaitAsync();
+            await Data.TextChannel.SendMessageAsync(Data.SaveSessionMessage());
+        }
+
+        public async Task AddTracks(IMusicSource[] tracks)
+        {
+            if (tracks.Length == 1)
+            {
+                await Data.TextChannel.SendMessageAsync(Data.AddedTrackMessage(await tracks[0].GetTrack(Data.LavalinkNode)));
+            }
+            else
+            {
+                await Data.TextChannel.SendMessageAsync(Data.AddedTracksMessage(tracks.Length));
+            }
+            await Data.State.StateLock.WaitAsync();
             try
             {
-                _state.Tracks.AddRange(tracks);
+                Data.State.Tracks.AddRange(tracks);
             }
             finally
             {
-                _state.StateLock.Release();
+                Data.State.StateLock.Release();
             }
         }
 
-        public void Skip()
+        public async Task Play()
         {
-            _playTaskSwitch.Cancel();
-            _playTaskSwitch = new CancellationTokenSource();
-            _playTask = _playTaskSwitch.Token;
+            await Data.LavalinkNode.PlayPartialAsync(Data.State.CurrentTrack,
+                Data.State.CurrentTrack.Position, Data.State.CurrentTrack.Length);
         }
 
-        public async Task MoveNextAsync()
+        public async Task<bool> MoveNextAsync()
         {
-            await _state.StateLock.WaitAsync();
+            await Data.State.StateLock.WaitAsync();
             try
             {
-                if (!_state.Tracks.Any())
+                if (!Data.State.Tracks.Any())
                 {
                     await PlaylistEndedAsync();
                     Dispose();
+                    return false;
                 }
-                var cur = _state.CurrentTrack;
-                _state.CurrentTrack = _state.Tracks.First();
-                _state.Tracks.Remove(_state.CurrentTrack);
-                if (_state.IsLooped && cur is not null)
+                var cur = Data.State.CurrentTrack;
+                // Fetch track
+                Data.State.CurrentTrack = await Data.State.Tracks.First().GetTrack(Data.LavalinkNode);
+                Data.State.Tracks.RemoveAt(0);
+                if (Data.State.IsLooped && cur is not null)
                 {
-                    cur.Position = TimeSpan.Zero;
-                    _state.Tracks.Add(cur);
+                    cur.SetPos(0);
+                    Data.State.Tracks.Add(new YoutubeSource(cur));
                 }
             }
             finally
             {
-                _state.StateLock.Release();
+                Data.State.StateLock.Release();
             }
-        }
-        
-        
-        /// <summary>
-        /// Worker task that plays music :)
-        /// </summary>
-        private async Task AudioPlayer()
-        {
-            try
-            {
-                _ffmpeg.ProgressUpdate += span =>
-                {
-                    _state.CurrentTrack.Position = span;
-                    return Task.CompletedTask;
-                };
-                _tsmSink = _connection.GetTransmitSink();
-                var buf = new byte[64000];
-                while (!_isDisposed)
-                {
-                    await _ffmpeg.CreateFFMpeg(await _state.CurrentTrack.Source.GetStreamUrl(_client), Proxy.EndPoint,
-                        _state.CurrentTrack.Position, buf, _tsmSink, _playTask);
-                    await MoveNextAsync();
-                }
-            }
-            catch(Exception e)
-            {
-                _log.LogError($"Exception occurred while playing audio: {e}");
-            }
+
+            return true;
         }
 
         public void Dispose()
@@ -203,11 +188,30 @@ namespace Encodeous.Musii.Player
             if (!_isDisposed)
             {
                 _isDisposed = true;
-                _playTaskSwitch.Cancel();
-                _connection.Disconnect();
-                _tsmSink?.Dispose();
-                Proxy.Dispose();
-                DeletePlayer.Invoke();
+                try
+                {
+                    Data.DeletePlayerCallback.Invoke().Wait();
+                }
+                catch
+                {
+                    
+                }
+                try
+                {
+                    Data.LavalinkNode?.StopAsync().GetAwaiter().GetResult();
+                }
+                catch
+                {
+                    
+                }
+                try
+                {
+                    Data.LavalinkNode?.DisconnectAsync().GetAwaiter().GetResult();
+                }
+                catch
+                {
+                    
+                }
             }
         }
     }

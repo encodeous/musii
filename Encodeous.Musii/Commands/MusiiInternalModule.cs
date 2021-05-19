@@ -24,13 +24,12 @@ namespace Encodeous.Musii.Commands
                 await ctx.RespondAsync("You are not in a channel");
                 return;
             }
-            var session = await _sessions.GetOrCreateSession(ctx);
+            var session = await _sessions.GetOrCreateSession(ctx.Guild, ctx.Member.VoiceState.Channel, ctx.Channel);
             if (!session.IsInitialized)
             {
                 await ctx.RespondAsync($"Session created!");
-                await session.InitializeStateAsync(_sessions.CreateState());
             }
-            if (session.Channel != ctx.Member.VoiceState.Channel)
+            if (session.Data.VoiceChannel != ctx.Member.VoiceState.Channel)
             {
                 await ctx.RespondAsync("The bot is in another channel!");
                 return;
@@ -39,21 +38,12 @@ namespace Encodeous.Musii.Commands
             var result = await session.Searcher.ParseGeneralAsync(query);
             if (result.Item1 is null)
             {
-                await ctx.RespondAsync(Messages.GenericError(ctx.Channel, "Query not found", result.Item2));
+                await ctx.RespondAsync(session.Data.GenericError("Query not found", result.Item2));
                 return;
             }
 
-            if (result.Item1.Length == 1)
-            {
-                await session.AddTrack(result.Item1[0]);
-            }
-            else
-            {
-                await session.AddTracks(result.Item1);
-            }
-
-            await session.MoveNextAsync();
-            session.StartPlaying();
+            await session.AddTracks(result.Item1);
+            await session.StartPlaying();
         } 
     }
 }

@@ -10,9 +10,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="FFMpegCore" Version="4.2.0" />
+      <PackageReference Include="DSharpPlus.Lavalink" Version="4.0.1" />
       <PackageReference Include="SpotifyAPI.Web" Version="6.2.0" />
       <PackageReference Include="SpotifyAPI.Web.Auth" Version="6.2.0" />
+      <PackageReference Include="YoutubeExplode" Version="6.0.0" />
     </ItemGroup>
 
 </Project>

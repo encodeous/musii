@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using DSharpPlus.Lavalink;
 
 namespace Encodeous.Musii.Data
 {
@@ -14,8 +15,8 @@ namespace Encodeous.Musii.Data
         public Guid StateId = Guid.NewGuid();
         public bool IsLooped = false;
         public double Volume = 100;
-        public Track CurrentTrack = null;
-        public List<Track> Tracks = new List<Track>();
+        public LavalinkTrack CurrentTrack = null;
+        public List<IMusicSource> Tracks = new List<IMusicSource>();
         public SemaphoreSlim StateLock = new (1,1);
 
         public PlayerState CloneState()
@@ -24,8 +25,8 @@ namespace Encodeous.Musii.Data
             {
                 Volume = Volume,
                 IsLooped = IsLooped,
-                CurrentTrack = CurrentTrack.CloneTrack(),
-                Tracks = Tracks.Select(x => x.CloneTrack()).ToList()
+                CurrentTrack = CurrentTrack?.CloneTrack(),
+                Tracks = Tracks.Select(x => x.CloneSource()).ToList()
             };
         }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Encodeous.Musii.Data;
 using Encodeous.Musii.Player;
@@ -11,22 +12,25 @@ namespace Encodeous.Musii.Network
     {
         private SpotifyService _spotify;
         private YoutubeService _youtube;
+        private ScopeData _data;
         private PlayerSessions _sessions;
 
-        public SearchService(SpotifyService spotify, YoutubeService youtube)
+        public SearchService(SpotifyService spotify, ScopeData data, YoutubeService youtube, PlayerSessions sessions)
         {
             _spotify = spotify;
+            _data = data;
             _youtube = youtube;
+            _sessions = sessions;
         }
 
-        public async Task<(Track[], string)> ParseGeneralAsync(string query)
+        public async Task<(IMusicSource[], string)> ParseGeneralAsync(string query)
         {
             string[] keywords = query.Split(" ");
             if (IsPlaylist(keywords))
             {
                 try
                 {
-                    return (await _youtube.SearchPlaylist(keywords[0]), "");
+                    return (await _youtube.SearchPlaylist(keywords[0], _data.LavalinkNode), "");
                 }
                 catch
                 {
@@ -37,7 +41,7 @@ namespace Encodeous.Musii.Network
             {
                 try
                 {
-                    return (new []{_youtube.SearchVideo(keywords[0])}, "");
+                    return (new []{await _youtube.SearchVideo(keywords[0], _data.LavalinkNode)}, "");
                 }
                 catch
                 {
@@ -85,7 +89,7 @@ namespace Encodeous.Musii.Network
                 }
                 try
                 {
-                    return (new []{_spotify.CreateSpotifyTrack(track)}, "");
+                    return (new IMusicSource[]{_spotify.CreateSpotifyTrack(track)}, "");
                 }
                 catch
                 {
@@ -100,13 +104,16 @@ namespace Encodeous.Musii.Network
                     return (null, "The playlist id was not found.");
                 }
 
-                return (state.Tracks.ToArray(), "");
+                var lst = new List<IMusicSource>();
+                if(state.CurrentTrack != null) lst.Add(new YoutubeSource(state.CurrentTrack));
+                lst.AddRange(state.Tracks);
+                return (lst.ToArray(), "");
             }
             else
             {
                 try
                 {
-                    return (new []{await _youtube.SearchVideo(keywords)}, "");
+                    return (new IMusicSource[]{await _youtube.SearchVideo(keywords, _data.LavalinkNode)}, "");
                 }
                 catch
                 {
