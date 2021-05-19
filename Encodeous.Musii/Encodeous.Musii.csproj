@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="DSharpPlus" Version="4.0.1" />
+      <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.1" />
+      <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.1" />
+      <PackageReference Include="DSharpPlus.VoiceNext" Version="4.0.1" />
+      <PackageReference Include="Encodeous.DirtyProxy" Version="1.0.3" />
+      <PackageReference Include="FFMpegCore" Version="4.2.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
+      <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="5.0.1" />
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
+      <PackageReference Include="ResourceLoader" Version="3.1.20095.1" />
+      <PackageReference Include="SpotifyAPI.Web" Version="6.2.0" />
+      <PackageReference Include="SpotifyAPI.Web.Auth" Version="6.2.0" />
+      <PackageReference Include="YoutubeExplode" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="appsettings.json" />
+      <EmbeddedResource Include="appsettings.json" />
+    </ItemGroup>
+
+</Project>
