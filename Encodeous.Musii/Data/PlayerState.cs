@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using DSharpPlus.Lavalink;
+using Encodeous.Musii.Network;
 using Nito.AsyncEx;
 
 namespace Encodeous.Musii.Data

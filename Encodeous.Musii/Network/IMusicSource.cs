@@ -1,10 +1,7 @@
-﻿using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using DSharpPlus.Lavalink;
 
-namespace Encodeous.Musii.Data
+namespace Encodeous.Musii.Network
 {
     /// <summary>
     /// Represents a music source over the network

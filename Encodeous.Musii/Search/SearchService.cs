@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using DSharpPlus.Lavalink;
-using Encodeous.Musii.Data;
-using Encodeous.Musii.Player;
+using Encodeous.Musii.Network;
 using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
 
-namespace Encodeous.Musii.Network
+namespace Encodeous.Musii.Search
 {
     public class SearchService
     {

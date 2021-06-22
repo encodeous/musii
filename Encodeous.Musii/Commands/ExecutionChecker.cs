@@ -1,13 +1,13 @@
 ﻿using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
-using Encodeous.Musii.Player;
+using Encodeous.Musii.Core;
 
 namespace Encodeous.Musii.Commands
 {
     public static class ExecutionChecker
     {
-        public static async Task<bool> CheckIfFails(this MusiiGuildManager manager, ExecutionFlags flags, CommandContext ctx)
+        public static async Task<bool> CheckIfFails(this MusiiGuild manager, ExecutionFlags flags, CommandContext ctx)
         {
             if (flags.HasFlag(ExecutionFlags.RequireHasPlayer))
             {

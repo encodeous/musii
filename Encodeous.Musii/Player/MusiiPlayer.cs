@@ -1,19 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus;
-using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
-using DSharpPlus.Interactivity.EventHandling;
-using DSharpPlus.Interactivity.Extensions;
-using DSharpPlus.Lavalink;
-using DSharpPlus.Lavalink.EventArgs;
+using Encodeous.Musii.Core;
 using Encodeous.Musii.Data;
 using Encodeous.Musii.Network;
+using Encodeous.Musii.Search;
 using Microsoft.Extensions.Logging;
-using Nito.AsyncEx;
 
 namespace Encodeous.Musii.Player
 {
@@ -32,9 +26,8 @@ namespace Encodeous.Musii.Player
         #region Private Data
 
         private DiscordMessage _queueMessage = null;
-        private SearchService _search;
         private ILogger _log;
-        private MusiiGuildManager _manager;
+        private MusiiGuild _manager;
         private bool _stopped = false;
 
         #endregion
@@ -43,7 +36,7 @@ namespace Encodeous.Musii.Player
         internal PlayerState State;
         internal DiscordChannel Voice, Text;
 
-        public MusiiPlayer(ILogger log, MusiiGuildManager manager, DiscordClient client, PlayerRecord record, DiscordChannel voice, DiscordChannel text, SearchService search)
+        public MusiiPlayer(ILogger log, MusiiGuild manager, DiscordClient client, PlayerRecord record, DiscordChannel voice, DiscordChannel text)
         {
             _log = log;
             _manager = manager;
@@ -51,7 +44,6 @@ namespace Encodeous.Musii.Player
             State = new PlayerState(record);
             Voice = voice;
             Text = text;
-            _search = search;
         }
 
         #endregion

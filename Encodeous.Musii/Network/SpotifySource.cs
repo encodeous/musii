@@ -1,11 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Net.Http;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.Lavalink;
 using SpotifyAPI.Web;
 
-namespace Encodeous.Musii.Data
+namespace Encodeous.Musii.Network
 {
     public class SpotifySource : IMusicSource
     {

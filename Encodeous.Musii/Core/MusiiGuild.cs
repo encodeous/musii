@@ -5,25 +5,26 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
 using Encodeous.Musii.Data;
-using Encodeous.Musii.Network;
+using Encodeous.Musii.Player;
+using Encodeous.Musii.Search;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 
-namespace Encodeous.Musii.Player
+namespace Encodeous.Musii.Core
 {
-    public class MusiiGuildManager
+    public class MusiiGuild
     {
         public bool HasPlayer { get; private set; } = false;
         public MusiiPlayer Player { get; private set; }
         public LavalinkGuildConnection Node { get; private set; } = null;
-        public PlayerSessions Sessions { get; private set; }
+        public MusiiCore Sessions { get; private set; }
         
         private DiscordClient _client;
         private ILogger _log;
         private SpotifyService _spotify;
         private SearchService _searcher = null;
 
-        public MusiiGuildManager(DiscordClient client, ILogger<MusiiPlayer> log, SpotifyService spotify, PlayerSessions sessions)
+        public MusiiGuild(DiscordClient client, ILogger<MusiiPlayer> log, SpotifyService spotify, MusiiCore sessions)
         {
             _client = client;
             _log = log;
@@ -55,7 +56,7 @@ namespace Encodeous.Musii.Player
                 Node = conn.GetGuildConnection(voice.Guild);
                 PlayerRecord nRec = record;
                 if (nRec == null) nRec = new PlayerRecord();
-                var plr = new MusiiPlayer(_log, this, _client, nRec, voice, text, GetSearcher());
+                var plr = new MusiiPlayer(_log, this, _client, nRec, voice, text);
                 Node.DiscordWebSocketClosed += (_, b) => plr.WsClosed(b);
                 Node.PlaybackFinished += (_, b) => plr.PlaybackFinished(b);
                 Node.TrackException += (_, b) => plr.TrackException(b);

@@ -1,8 +1,7 @@
 ﻿using System;
 using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
-using Encodeous.Musii.Data;
-using Encodeous.Musii.Player;
+using Encodeous.Musii.Core;
 using Humanizer;
 
 namespace Encodeous.Musii
@@ -14,7 +13,7 @@ namespace Encodeous.Musii
         public static DiscordColor Warning = DiscordColor.Purple;
         public static DiscordColor Error = DiscordColor.Red;
         #region Player Messages
-        public static DiscordMessageBuilder PlaylistEmptyMessage(this MusiiGuildManager data)
+        public static DiscordMessageBuilder PlaylistEmptyMessage(this MusiiGuild data)
         {
             return new DiscordMessageBuilder()
                 .WithEmbed(new DiscordEmbedBuilder()
@@ -23,7 +22,7 @@ namespace Encodeous.Musii
                     .WithDescription("The bot will now leave the voice channel")
                     .WithFooter($"In {data.Player.Voice.Name}"));
         }
-        public static DiscordMessageBuilder AddedTrackMessage(this MusiiGuildManager data, LavalinkTrack track)
+        public static DiscordMessageBuilder AddedTrackMessage(this MusiiGuild data, LavalinkTrack track)
         {
             return new DiscordMessageBuilder()
                 .WithEmbed(new DiscordEmbedBuilder()
@@ -34,7 +33,7 @@ namespace Encodeous.Musii
                     .WithThumbnail(track.GetThumbnail())
                     .WithFooter($"In {data.Player.Voice.Name}"));
         }
-        public static DiscordMessageBuilder AddedTracksMessage(this MusiiGuildManager data, int tracks)
+        public static DiscordMessageBuilder AddedTracksMessage(this MusiiGuild data, int tracks)
         {
             return new DiscordMessageBuilder()
                 .WithEmbed(new DiscordEmbedBuilder()
@@ -44,7 +43,7 @@ namespace Encodeous.Musii
                         :$"{tracks} tracks have been added to the queue!")
                     .WithFooter($"In {data.Player.Voice.Name}"));
         }
-        public static DiscordMessageBuilder SaveSessionMessage(this MusiiGuildManager data)
+        public static DiscordMessageBuilder SaveSessionMessage(this MusiiGuild data)
         {
             return new DiscordMessageBuilder()
                 .WithEmbed(new DiscordEmbedBuilder()
@@ -53,7 +52,7 @@ namespace Encodeous.Musii
                     .WithDescription($"Resume listening to this playlist by playing the record: \n`{data.Sessions.SaveRecord(data.Player.State.SaveRecord()).RecordId}` with the play command.")
                     .WithFooter($"Record Saved."));
         }
-        public static DiscordMessageBuilder LockChangedMessage(this MusiiGuildManager data)
+        public static DiscordMessageBuilder LockChangedMessage(this MusiiGuild data)
         {
             if (!data.Player.State.IsLocked)
             {
@@ -76,7 +75,7 @@ namespace Encodeous.Musii
                     );
             }
         }
-        public static DiscordMessageBuilder QueueSkippedMessage(this MusiiGuildManager data, int skipped)
+        public static DiscordMessageBuilder QueueSkippedMessage(this MusiiGuild data, int skipped)
         {
             return new DiscordMessageBuilder()
                 .WithEmbed(new DiscordEmbedBuilder()
@@ -85,7 +84,7 @@ namespace Encodeous.Musii
                     .WithDescription($"{skipped} {(skipped == 1?"song":"songs")} {(skipped == 1?"was":"were")} skipped.")
                     .WithFooter($"In channel {data.Player.Voice}"));
         }
-        public static DiscordMessageBuilder PositionSetMessage(this MusiiGuildManager data, TimeSpan pos)
+        public static DiscordMessageBuilder PositionSetMessage(this MusiiGuild data, TimeSpan pos)
         {
             return new DiscordMessageBuilder()
                 .WithEmbed(new DiscordEmbedBuilder()

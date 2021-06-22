@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using DSharpPlus.Lavalink;
+using Encodeous.Musii.Network;
 
 namespace Encodeous.Musii.Data
 {

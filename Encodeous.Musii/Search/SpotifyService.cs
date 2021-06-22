@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Encodeous.Musii.Data;
+using Encodeous.Musii.Network;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SpotifyAPI.Web;
 
-namespace Encodeous.Musii.Network
+namespace Encodeous.Musii.Search
 {
     public class SpotifyService
     {

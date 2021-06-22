@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
-using DSharpPlus.Interactivity.EventHandling;
 using DSharpPlus.Interactivity.Extensions;
-using Encodeous.Musii.Data;
+using Encodeous.Musii.Network;
 using Humanizer;
 
 namespace Encodeous.Musii.Player

@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
-using Encodeous.Musii.Data;
+using Encodeous.Musii.Network;
 
 namespace Encodeous.Musii.Player
 {

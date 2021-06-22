@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.Lavalink;
-using Encodeous.Musii.Data;
+using Encodeous.Musii.Network;
 
-namespace Encodeous.Musii.Network
+namespace Encodeous.Musii.Search
 {
     public class YoutubeService
     {

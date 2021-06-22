@@ -20,7 +20,7 @@
       <PackageReference Include="ResourceLoader" Version="3.1.20095.1" />
       <PackageReference Include="SpotifyAPI.Web" Version="6.2.0" />
       <PackageReference Include="SpotifyAPI.Web.Auth" Version="6.2.0" />
-      <PackageReference Include="YoutubeExplode" Version="6.0.2" />
+      <PackageReference Include="YoutubeExplode" Version="6.0.3" />
     </ItemGroup>
 
     <ItemGroup>

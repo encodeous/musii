@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Reflection;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
 using Encodeous.Musii.Player;
 using Newtonsoft.Json;
-using SpotifyAPI.Web;
 
 namespace Encodeous.Musii
 {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
 using DSharpPlus;
@@ -9,11 +8,9 @@ using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.Lavalink;
-using DSharpPlus.Net;
 using DSharpPlus.VoiceNext;
-using Encodeous.Musii.Data;
-using Encodeous.Musii.Network;
-using Encodeous.Musii.Player;
+using Encodeous.Musii.Search;
+using Encodeous.Musii.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -22,7 +19,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Encodeous.Musii
 {
-    public class Musii
+    public class MusiiBot
     {
         public async Task Run()
         {
@@ -36,13 +33,13 @@ namespace Encodeous.Musii
                 .ConfigureServices(async (context, services) =>
                 {
                     // add services
-                    services.AddSingleton<PlayerSessions>();
+                    services.AddSingleton<Core.MusiiCore>();
                     services.AddSingleton<SpotifyService>();
                     services.AddSingleton<YoutubeService>();
                     // add discord
                     AddDiscord(context, services);
                     // add per-guild-services
-                    services.AddScoped<MusiiGuildManager>();
+                    services.AddScoped<MusiiGuild>();
                     // add application
                     services.AddHostedService<HostedBot>();
                 }).Build();
@@ -76,7 +73,7 @@ namespace Encodeous.Musii
         }
         private void Setup(IServiceProvider collection)
         {
-            var log = collection.GetRequiredService<ILogger<Musii>>();
+            var log = collection.GetRequiredService<ILogger<MusiiBot>>();
             var client = collection.GetRequiredService<DiscordClient>();
             var config = collection.GetRequiredService<IConfiguration>();
 

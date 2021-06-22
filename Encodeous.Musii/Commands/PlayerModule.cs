@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using Encodeous.Musii.Data;
-using Encodeous.Musii.Player;
+using Encodeous.Musii.Core;
 
 namespace Encodeous.Musii.Commands
 {
@@ -13,9 +11,9 @@ namespace Encodeous.Musii.Commands
     [RequireBotPermissions(Permissions.Speak | Permissions.EmbedLinks | Permissions.UseVoice | Permissions.SendMessages)]
     public class PlayerModule : BaseCommandModule
     {
-        private PlayerSessions _sessions;
+        private MusiiCore _sessions;
 
-        public PlayerModule(PlayerSessions sessions)
+        public PlayerModule(MusiiCore sessions)
         {
             _sessions = sessions;
         }

@@ -1,30 +1,21 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using ConcurrentCollections;
-using DSharpPlus;
-using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
-using DSharpPlus.Lavalink;
 using Encodeous.Musii.Data;
-using Encodeous.Musii.Network;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
-namespace Encodeous.Musii.Player
+namespace Encodeous.Musii.Core
 {
     /// <summary>
     /// Manages the "playing" sessions
     /// </summary>
-    public class PlayerSessions
+    public class MusiiCore
     {
-        private ConcurrentDictionary<ulong, MusiiGuildManager> _newSessions = new();
+        private ConcurrentDictionary<ulong, MusiiGuild> _newSessions = new();
         private ConcurrentDictionary<Guid, PlayerRecord> _records = new();
 
         private IServiceProvider _provider;
-        public PlayerSessions(IServiceProvider provider)
+        public MusiiCore(IServiceProvider provider)
         {
             _provider = provider;
         }
@@ -40,7 +31,7 @@ namespace Encodeous.Musii.Player
             return rec;
         }
         
-        public MusiiGuildManager GetSessionNew(DiscordGuild guild)
+        public MusiiGuild GetSessionNew(DiscordGuild guild)
         {
             if (_newSessions.ContainsKey(guild.Id))
             {
@@ -49,7 +40,7 @@ namespace Encodeous.Musii.Player
             else
             {
                 var scope = _provider.CreateScope();
-                return _newSessions[guild.Id] = scope.ServiceProvider.GetRequiredService<MusiiGuildManager>();
+                return _newSessions[guild.Id] = scope.ServiceProvider.GetRequiredService<MusiiGuild>();
             }
         }
     }

@@ -1,6 +1,6 @@
 ﻿using System;
 using Encodeous.Musii;
 
-var musii = new Musii();
+var musii = new MusiiBot();
 
 await musii.Run();

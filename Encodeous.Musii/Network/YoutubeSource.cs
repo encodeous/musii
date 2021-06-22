@@ -1,13 +1,7 @@
-﻿using System;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using DSharpPlus.Lavalink;
-using YoutubeExplode;
-using YoutubeExplode.Playlists;
-using YoutubeExplode.Videos;
 
-namespace Encodeous.Musii.Data
+namespace Encodeous.Musii.Network
 {
     public class YoutubeSource : IMusicSource
     {
