@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Net;
+using Encodeous.Musii.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -14,12 +15,14 @@ namespace Encodeous.Musii
         private DiscordClient _client;
         private IConfiguration _config;
         private ILogger<HostedBot> _log;
+        private RecordContext _context;
 
-        public HostedBot(DiscordClient client, ILogger<HostedBot> log, IConfiguration config)
+        public HostedBot(DiscordClient client, ILogger<HostedBot> log, IConfiguration config, RecordContext context)
         {
             _client = client;
             _log = log;
             _config = config;
+            _context = context;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -44,6 +47,7 @@ namespace Encodeous.Musii
         public async Task StopAsync(CancellationToken cancellationToken)
         {
             await _client.DisconnectAsync();
+            await _context.SaveChangesAsync();
         }
     }
 }

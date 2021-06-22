@@ -6,9 +6,9 @@ namespace Encodeous.Musii.Network
     /// <summary>
     /// Represents a music source over the network
     /// </summary>
-    public interface IMusicSource
+    public abstract class BaseMusicSource
     {
-        public Task<LavalinkTrack> GetTrack(LavalinkGuildConnection connection);
-        public string GetTrackName();
+        public abstract Task<LavalinkTrack> GetTrack(LavalinkGuildConnection connection);
+        public abstract string GetTrackName();
     }
 }

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using DSharpPlus.Lavalink;
 using Encodeous.Musii.Network;
-using Newtonsoft.Json;
 
 namespace Encodeous.Musii.Data
 {
@@ -11,12 +11,11 @@ namespace Encodeous.Musii.Data
     /// </summary>
     public record PlayerRecord
     {
+        [Key]
         public Guid RecordId { get; } = Guid.NewGuid();
-        public bool IsLooped { get; init; } = false;
+        public LoopType Loop { get; init; } = LoopType.Off;
         public int Volume { get; init; } = 100;
         public LavalinkTrack CurrentTrack { get; init; } = null;
-        [JsonIgnore]
-        public IReadOnlyList<IMusicSource> Tracks { get; init; } = new List<IMusicSource>();
-        public bool IsPaused { get; init; } = false;
+        public IReadOnlyList<BaseMusicSource> Tracks { get; init; } = new List<BaseMusicSource>();
     }
 }

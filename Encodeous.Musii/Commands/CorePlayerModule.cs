@@ -25,62 +25,77 @@ namespace Encodeous.Musii.Commands
         {
             if (string.IsNullOrEmpty(query))
             {
-                await ctx.RespondAsync("Please specify a valid query");
+                await ctx.RespondAsync(Messages.GenericError(
+                    "Invalid Query", $"Please specify a valid query", ""));
                 return;
             }
             var mgr = _sessions.GetSessionNew(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireVoicestate, ctx)) return;
             if (mgr.HasPlayer && mgr.Player.Voice != ctx.Member.VoiceState.Channel)
             {
-                await ctx.RespondAsync("The bot is in another channel!");
+                await ctx.RespondAsync(Messages.GenericError(
+                    "The bot is in another channel!", $"", ""));
                 return;
             }
 
             bool freshSession = false;
-            if (Guid.TryParse(query.Trim(), out var x))
+            try
             {
-                if (mgr.HasPlayer)
+                if (Guid.TryParse(query.Trim(), out var x))
                 {
-                    await ctx.RespondAsync("Before restoring a record, please clear your current playlist.");
-                    return;
-                }
-                var state = _sessions.RestoreRecord(x);
-                if (state is null)
-                {
-                    await ctx.RespondAsync("Cannot restore playlist, it does not exist!");
-                    return;
-                }
-
-                freshSession = true;
-                await mgr.CreatePlayerAsync(ctx.Member.VoiceState.Channel,ctx.Channel, state);
-                await ctx.RespondAsync(Messages.RecordRestoreMessage());
-            }
-            else
-            {
-                if (!mgr.HasPlayer)
-                {
-                    freshSession = true;
-                    await mgr.CreatePlayerAsync(ctx.Member.VoiceState.Channel, ctx.Channel);
-                }
-                var result = await mgr.GetSearcher().ParseGeneralAsync(query);
-                if (result.Item1 is null)
-                {
-                    await ctx.RespondAsync(Messages.GenericError("Query not found", result.Item2, "Error"));
-                    // dumb restriction by lavalink that the bot must join a channel first for it to make queries
-                    if (freshSession)
+                    if (mgr.HasPlayer)
                     {
-                        await mgr.StopAsync();
+                        await ctx.RespondAsync(Messages.GenericError(
+                            "Before restoring a record, please clear your current playlist.", $"", ""));
+                        return;
                     }
-                    return;
-                }
-                await mgr.Player.AddTracks(result.Item1, ctx);
-            }
+                    var state = _sessions.RestoreRecord(x);
+                    if (state is null)
+                    {
+                        await ctx.RespondAsync(Messages.GenericError(
+                            "Cannot restore playlist, it does not exist!", $"", ""));
+                        return;
+                    }
 
-            if (freshSession)
+                    freshSession = true;
+                    await mgr.CreatePlayerAsync(ctx.Member.VoiceState.Channel,ctx.Channel, state);
+                    await ctx.RespondAsync(Messages.RecordRestoreMessage());
+                }
+                else
+                {
+                    if (!mgr.HasPlayer)
+                    {
+                        freshSession = true;
+                        await mgr.CreatePlayerAsync(ctx.Member.VoiceState.Channel, ctx.Channel);
+                    }
+                    var result = await mgr.GetSearcher().ParseGeneralAsync(query);
+                    if (result.Item1 is null)
+                    {
+                        await ctx.RespondAsync(Messages.GenericError("Query not found", result.Item2, "Error"));
+                        // dumb restriction by lavalink that the bot must join a channel first for it to make queries
+                        if (freshSession)
+                        {
+                            await mgr.StopAsync();
+                        }
+                        return;
+                    }
+                    await mgr.Player.AddTracksAsync(result.Item1, ctx);
+                }
+
+                if (freshSession)
+                {
+                    // start playing :)
+                    if(mgr.Player.State.CurrentTrack is null) await mgr.Player.MoveNextAsync();
+                    await mgr.Player.PlayActiveSongAsync();
+                }
+            }
+            catch(Exception e)
             {
-                // start playing :)
-                if(mgr.Player.State.CurrentTrack is null) await mgr.Player.MoveNextAsync();
-                await mgr.Player.PlayActiveSongAsync();
+                if (freshSession)
+                {
+                    mgr.HasPlayer = true;
+                    await mgr.StopAsync(true);
+                }
             }
         }
         [Command("queue"), Aliases("q"), Description("Shows the playlist, expires after 1 minute of inactivity"), Cooldown(2, 4, CooldownBucketType.Guild)]
@@ -92,7 +107,7 @@ namespace Encodeous.Musii.Commands
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel, ctx)) return;
         
-            await mgr.Player.SendQueueMessage(page);
+            await mgr.Player.SendQueueMessageAsync(page);
         }
         [Command("lock"), Aliases("dj")]
         [Description("Toggles lock on playback commands to users with Manage Message permissions.")]
@@ -100,18 +115,27 @@ namespace Encodeous.Musii.Commands
         [RequireUserPermissions(Permissions.ManageMessages)]
         public async Task LockCommand(CommandContext ctx)
         {
-            if (ctx.Member.VoiceState is null)
-            {
-                await ctx.RespondAsync("You are not in a channel");
-                return;
-            }
             var mgr = _sessions.GetSessionNew(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel |
                                        ExecutionFlags.RequireManageMessage, ctx)) return;
             await ctx.RespondAsync(mgr.LockChangedMessage());
-            await mgr.Player.ToggleLock();
+            await mgr.Player.ToggleLockAsync();
+        }
+        [Command("pin"), Aliases("radio")]
+        [Description("Pins the bot so that it does not leave until the playlist is empty")]
+        [Cooldown(2, 4, CooldownBucketType.Guild)]
+        [RequireUserPermissions(Permissions.ManageMessages)]
+        public async Task PinCommand(CommandContext ctx)
+        {
+            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
+                                       ExecutionFlags.RequireVoicestate |
+                                       ExecutionFlags.RequireSameVoiceChannel |
+                                       ExecutionFlags.RequireManMsgOrUnlocked, ctx)) return;
+            await ctx.RespondAsync(mgr.PinChangedMessage());
+            await mgr.Player.TogglePinAsync();
         }
         [Priority(1)]
         [Command("skip")]
@@ -127,11 +151,6 @@ namespace Encodeous.Musii.Commands
         [Cooldown(2, 4, CooldownBucketType.Guild)]
         public async Task SkipCommand(CommandContext ctx, int lowerBound, int upperBound)
         {
-            if (ctx.Member.VoiceState is null)
-            {
-                await ctx.RespondAsync("You are not in a channel");
-                return;
-            }
             var mgr = _sessions.GetSessionNew(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
@@ -139,13 +158,18 @@ namespace Encodeous.Musii.Commands
                                        ExecutionFlags.RequireManMsgOrUnlocked, ctx)) return;
             if (lowerBound > upperBound || lowerBound < 0 || upperBound > mgr.Player.State.Tracks.Count + 1)
             {
-                await ctx.RespondAsync("Please specify a valid range");
+                await ctx.RespondAsync(Messages.GenericError(
+                    "Invalid Input", $"Please specify a valid range.", ""));
                 return;
             }
 
-            if (await mgr.Player.SkipSongs(lowerBound, upperBound))
+            if (upperBound - lowerBound + 1 == 1)
             {
-                await ctx.RespondAsync(mgr.QueueSkippedMessage(upperBound - lowerBound + 1));
+                await ctx.RespondAsync(mgr.SkippedTrackMessage(mgr.Player.State.CurrentTrack));
+            }
+            if (await mgr.Player.SkipSongsAsync(lowerBound, upperBound))
+            {
+                if(upperBound - lowerBound + 1 != 1) await ctx.RespondAsync(mgr.QueueSkippedMessage(upperBound - lowerBound + 1));
             }
         }
     }

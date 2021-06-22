@@ -20,7 +20,7 @@ namespace Encodeous.Musii.Search
             _youtube = youtube;
         }
 
-        public virtual async Task<(IMusicSource[], string)> ParseGeneralAsync(string query)
+        public virtual async Task<(BaseMusicSource[], string)> ParseGeneralAsync(string query)
         {
             string[] keywords = query.Split(" ");
             if (IsPlaylist(keywords))
@@ -86,7 +86,7 @@ namespace Encodeous.Musii.Search
                 }
                 try
                 {
-                    return (new IMusicSource[]{_spotify.CreateSpotifyTrack(track)}, "");
+                    return (new BaseMusicSource[]{_spotify.CreateSpotifyTrack(track)}, "");
                 }
                 catch
                 {
@@ -97,7 +97,7 @@ namespace Encodeous.Musii.Search
             {
                 try
                 {
-                    return (new IMusicSource[]{await _youtube.SearchVideo(keywords, _node)}, "");
+                    return (new BaseMusicSource[]{await _youtube.SearchVideo(keywords, _node)}, "");
                 }
                 catch
                 {

@@ -1,17 +1,21 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.Lavalink;
+using Newtonsoft.Json;
 using SpotifyAPI.Web;
 
 namespace Encodeous.Musii.Network
 {
-    public class SpotifySource : IMusicSource
+    public class SpotifySource : BaseMusicSource
     {
-        private bool _hasQueried = false;
+        public bool HasQueried = false;
         public LavalinkTrack Track = null;
         public string BuiltQuery;
-        private string _title;
-        
+        public string Title;
+        [JsonConstructor]
+        public SpotifySource()
+        {
+        }
         public SpotifySource(FullTrack track)
         {
             var query = track.Name + " ";
@@ -20,7 +24,7 @@ namespace Encodeous.Musii.Network
                 query += a.Name + " ";
             }
             BuiltQuery = query;
-            _title = track.Name;
+            Title = track.Name;
         }
         public SpotifySource(SimpleTrack track)
         {
@@ -30,20 +34,20 @@ namespace Encodeous.Musii.Network
                 query += a.Name + " ";
             }
             BuiltQuery = query;
-            _title = track.Name;
+            Title = track.Name;
         }
 
-        public async Task<LavalinkTrack> GetTrack(LavalinkGuildConnection connection)
+        public override async Task<LavalinkTrack> GetTrack(LavalinkGuildConnection connection)
         {
-            if (_hasQueried) return Track;
-            _hasQueried = true;
+            if (HasQueried) return Track;
+            HasQueried = true;
             var res = await connection.GetTracksAsync(BuiltQuery);
             return Track = res.Tracks.First();
         }
 
-        public string GetTrackName()
+        public override string GetTrackName()
         {
-            return _title;
+            return Title;
         }
     }
 }

@@ -14,9 +14,13 @@
         MShuffle,
         MPause,
         MLock,
+        MLoop,
+        MJump,
+        MFilter,
         MSkip,
         MAdd,
         MStop,
-        MVolume
+        MVolume,
+        MPin
     }
 }

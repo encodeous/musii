@@ -10,6 +10,8 @@ using DSharpPlus.Lavalink;
 using Encodeous.Musii.Data;
 using Encodeous.Musii.Player;
 using Encodeous.Musii.Search;
+using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Nito.AsyncEx;
@@ -18,7 +20,7 @@ namespace Encodeous.Musii.Core
 {
     public class MusiiGuild
     {
-        public bool HasPlayer { get; private set; } = false;
+        public bool HasPlayer { get; set; } = false;
         public MusiiPlayer Player { get; private set; }
         public LavalinkGuildConnection Node { get; private set; } = null;
         public MusiiCore Sessions { get; private set; }
@@ -29,13 +31,15 @@ namespace Encodeous.Musii.Core
         private SearchService _searcher = null;
         private DiscordChannel _traceLog = null;
         private HashSet<TraceSource> _traceFilter = new HashSet<TraceSource>();
+        private IConfiguration _config;
 
-        public MusiiGuild(DiscordClient client, ILogger<MusiiPlayer> log, SpotifyService spotify, MusiiCore sessions)
+        public MusiiGuild(DiscordClient client, ILogger<MusiiPlayer> log, SpotifyService spotify, MusiiCore sessions, IConfiguration config)
         {
             _client = client;
             _log = log;
             _spotify = spotify;
             Sessions = sessions;
+            _config = config;
         }
 
         public void SetTraceDestination(DiscordChannel channel, TraceSource[] filter)
@@ -80,7 +84,11 @@ namespace Encodeous.Musii.Core
                 Node = conn.GetGuildConnection(voice.Guild);
                 PlayerRecord nRec = record;
                 if (nRec == null) nRec = new PlayerRecord();
-                var plr = new MusiiPlayer(_log, this, _client, nRec, voice, text);
+                var plr = new MusiiPlayer(_log, this, _client, nRec, voice, text,
+                    TimeSpan.FromSeconds(double.Parse(_config["musii:UserUnpinnnedLeaveTimeoutSeconds"])),
+                    int.Parse(_config["musii:DefaultQueueLength"]),
+                    TimeSpan.FromSeconds(double.Parse(_config["musii:InteractQueueTimeoutSeconds"]))
+                    );
                 Node.DiscordWebSocketClosed += (_, b) => plr.WsClosed(b);
                 Node.PlaybackFinished += (_, b) => plr.PlaybackFinished(b);
                 Node.TrackException += (_, b) => plr.TrackException(b);

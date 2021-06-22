@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
@@ -12,7 +13,7 @@ namespace Encodeous.Musii.Player
     {
         #region Playback Methods
         
-        public Task SetVolume(int vol)
+        public Task SetVolumeAsync(int vol)
         {
             return this.ExecuteSynchronized(async () =>
             {
@@ -38,7 +39,7 @@ namespace Encodeous.Musii.Player
             }, true);
         }
 
-        public Task<bool> TogglePause()
+        public Task<bool> TogglePauseAsync()
         {
             return this.ExecuteSynchronized(async () =>
             {
@@ -60,7 +61,7 @@ namespace Encodeous.Musii.Player
             }, true);
         }
         
-        public Task<bool> ToggleLock()
+        public Task<bool> ToggleLockAsync()
         {
             return this.ExecuteSynchronized(async () =>
             {
@@ -72,8 +73,51 @@ namespace Encodeous.Musii.Player
                 return State.IsLocked;
             });
         }
+        
+        public Task<LoopType> SetLoopTypeAsync(LoopType loopType)
+        {
+            return this.ExecuteSynchronized(async () =>
+            {
+                await _manager.Trace(TraceSource.MLoop, new
+                {
+                    BeforeState = State,
+                    NewLoopType = loopType
+                });
+                return State.Loop = loopType;
+            });
+        }
+        
+        public Task<AudioFilter> SetFilterTypeAsync(AudioFilter filterType)
+        {
+            return this.ExecuteSynchronized(async () =>
+            {
+                await _manager.Trace(TraceSource.MFilter, new
+                {
+                    BeforeState = State,
+                    NewFilterType = filterType
+                });
+                if (filterType == AudioFilter.None)
+                {
+                    await _manager.Node.ResetEqualizerAsync();
+                    State.Filter = AudioFilter.None;
+                }
+                else
+                {
+                    var filter = filterType switch
+                    {
+                        AudioFilter.Bass => Constants.PUNCH_BASS,
+                        AudioFilter.Piano => Constants.PIANO,
+                        AudioFilter.Metal => Constants.METAL_ROCK,
+                        _ => throw new Exception("Invalid filter")
+                    };
+                    await _manager.Node.AdjustEqualizerAsync(filter);
+                    State.Filter = filterType;
+                }
+                return filterType;
+            });
+        }
 
-        public Task<bool> SkipSongs(int l, int r)
+        public Task<bool> SkipSongsAsync(int l, int r)
         {
             return this.ExecuteSynchronized(async () =>
             {
@@ -100,8 +144,46 @@ namespace Encodeous.Musii.Player
                 return true;
             }, true);
         }
+        
+        public Task<bool> JumpAsync(int count)
+        {
+            return this.ExecuteSynchronized(async () =>
+            {
+                await _manager.Trace(TraceSource.MJump, new
+                {
+                    BeforeState = State,
+                    BeforeTrackCount = State.Tracks.Count,
+                    JumpCount = count,
+                    JumpRem = count % (State.Tracks.Count + 1)
+                });
 
-        public async Task AddTracks(IMusicSource[] tracks, CommandContext ctx = null)
+                int rjump = count % (State.Tracks.Count + 1);
+                if (rjump != 0)
+                {
+                    if (rjump < 0)
+                    {
+                        int ridx = State.Tracks.Count + rjump;
+                        var rsel = State.Tracks.GetRange(ridx, State.Tracks.Count - ridx);
+                        rsel.Add(new YoutubeLazySource(State.CurrentTrack));
+                        State.Tracks.RemoveRange(ridx, State.Tracks.Count - ridx);
+                        State.Tracks.InsertRange(0, rsel);
+                    }
+                    else
+                    {
+                        var rsel = State.Tracks.GetRange(0,rjump-1);
+                        rsel.Insert(0, new YoutubeLazySource(State.CurrentTrack));
+                        State.Tracks.RemoveRange(0, rjump-1);
+                        State.Tracks.AddRange(rsel);
+                    }
+                    await MoveNextAsyncUnlocked();
+                    await PlayActiveSongAsync();
+                }
+               
+                return true;
+            }, true);
+        }
+
+        public async Task AddTracksAsync(BaseMusicSource[] tracks, CommandContext ctx = null)
         {
             await _manager.Trace(TraceSource.MAdd, new
             {

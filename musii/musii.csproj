@@ -12,6 +12,12 @@
     <ItemGroup>
       <PackageReference Include="DSharpPlus.Lavalink" Version="4.0.1" />
       <PackageReference Include="Humanizer.Core" Version="2.11.10" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.7" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="5.0.7">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.7" />
       <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.0" />
       <PackageReference Include="ResourceLoader" Version="3.1.20095.1" />
       <PackageReference Include="SpotifyAPI.Web" Version="6.2.0" />

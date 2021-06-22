@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using DSharpPlus;
@@ -11,6 +12,8 @@ using DSharpPlus.Lavalink;
 using DSharpPlus.VoiceNext;
 using Encodeous.Musii.Search;
 using Encodeous.Musii.Core;
+using Encodeous.Musii.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -42,6 +45,8 @@ namespace Encodeous.Musii
                     services.AddScoped<MusiiGuild>();
                     // add application
                     services.AddHostedService<HostedBot>();
+                    // add database
+                    services.AddDbContext<RecordContext>();
                 }).Build();
             // setup application
             Setup(appHost.Services);
@@ -76,6 +81,13 @@ namespace Encodeous.Musii
             var log = collection.GetRequiredService<ILogger<MusiiBot>>();
             var client = collection.GetRequiredService<DiscordClient>();
             var config = collection.GetRequiredService<IConfiguration>();
+            var db = collection.GetRequiredService<RecordContext>();
+            if (db.Database.GetPendingMigrations().Any())
+            {
+                log.LogInformation("Migrating database...");
+                db.Database.Migrate();
+                db.SaveChanges();
+            }
 
             // add services to discord
             

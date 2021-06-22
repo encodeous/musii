@@ -13,17 +13,17 @@ In Musii v5, the features were overhauled and improved drastically
 - Archive playlists in "records" to be played later, or in another guild
 - Advanced and intuitive playback controls
 - Playlist "pinning" which supports 24/7 playback
+- Advanced event debugging/tracing
 
 **Offered Controls (WIP):**
 - Movement of the playhead in real-time
 - Adjust volume
-- Apply bass / audio filters
+- Apply audio filters (Bass, Piano, Metal)
 - Looped Playback (Loop on current song, loop on playlist)
 - Shuffle Playlist
 - Skip / Skip Range
 - Locking playlist to moderators
-- Jump to a specific song
-- 
+- Jump forwards/backwards to a song
 
 
 

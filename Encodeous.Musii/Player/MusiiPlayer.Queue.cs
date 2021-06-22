@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
+using Encodeous.Musii.Data;
 using Encodeous.Musii.Network;
 using Humanizer;
 
@@ -13,9 +14,9 @@ namespace Encodeous.Musii.Player
     {
         #region Queue Methods
 
-        public async Task SendQueueMessage(int startPage = 1)
+        public async Task SendQueueMessageAsync(int startPage = 1)
         {
-            var msg = await Text.SendMessageAsync(BuildQueueEmbed(startPage - 1, await GetQueue()));
+            var msg = await Text.SendMessageAsync(BuildQueueEmbed(startPage - 1, await GetQueue(), _queueLength));
             _queueMessage = msg;
             Task.Run(async () =>
             {
@@ -30,7 +31,7 @@ namespace Encodeous.Musii.Player
                 await msg.CreateReactionAsync(r);
                 
                 bool changed = false;
-                while (!_stopped && msg == _queueMessage && DateTime.Now - startTime <= TimeSpan.FromMinutes(1))
+                while (!_stopped && msg == _queueMessage && DateTime.Now - startTime <= _queueTimeout)
                 {
                     var cq = await GetQueue();
                     int tpages = (int) Math.Ceiling((cq.Count - 1) / 20.0);
@@ -114,7 +115,7 @@ namespace Encodeous.Musii.Player
             });
         }
 
-        private DiscordEmbedBuilder BuildQueueEmbed(int page, List<IMusicSource> q, int itemsPerPage = 20)
+        private DiscordEmbedBuilder BuildQueueEmbed(int page, List<BaseMusicSource> q, int itemsPerPage = 20)
         {
             // 20 items per pag
             int tpages = (int) Math.Ceiling((q.Count - 1) / (double)itemsPerPage);
@@ -134,7 +135,7 @@ namespace Encodeous.Musii.Player
                 builder.WithDescription("Queue is empty.");
             }
 
-            if (sel.Count > 1)
+            if (sel.Count >= 1)
             {
                 builder.AddField($"In queue - `{q.Count - 1}`",
                     string.Join("\n", sel
@@ -142,9 +143,18 @@ namespace Encodeous.Musii.Player
             }
 
             string footer = $"In channel {Voice.Name} - {State.Volume}% Volume - Started {(DateTime.UtcNow - State.StartTime).Humanize(2)} ago";
-            if (State.IsLooped)
+            if (State.Loop == LoopType.Playlist)
             {
-                footer += " - On Loop";
+                footer += " - Playlist on loop";
+            }
+            if (State.Loop == LoopType.Song)
+            {
+                footer += " - Song on loop";
+            }
+
+            if (State.Filter != AudioFilter.None)
+            {
+                footer += $" - {State.Filter} Filter";
             }
 
             if (State.IsPaused)
@@ -156,17 +166,22 @@ namespace Encodeous.Musii.Player
             {
                 footer += " - Locked";
             }
+            
+            if (State.IsPinned)
+            {
+                footer += " - Pinned";
+            }
 
             builder.WithFooter(footer);
             builder.WithThumbnail(State.CurrentTrack.GetThumbnail());
             return builder;
         }
 
-        public Task<List<IMusicSource>> GetQueue()
+        public Task<List<BaseMusicSource>> GetQueue()
         {
             return this.ExecuteSynchronized(() =>
             {
-                var lst = new List<IMusicSource>();
+                var lst = new List<BaseMusicSource>();
                 if (State.CurrentTrack is not null)
                 {
                     lst.Add(new YoutubeSource(State.CurrentTrack));

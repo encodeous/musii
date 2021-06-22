@@ -12,23 +12,31 @@ namespace Encodeous.Musii.Core
     public class MusiiCore
     {
         private ConcurrentDictionary<ulong, MusiiGuild> _newSessions = new();
-        private ConcurrentDictionary<Guid, PlayerRecord> _records = new();
 
         private IServiceProvider _provider;
-        public MusiiCore(IServiceProvider provider)
+        private RecordContext _context;
+        public MusiiCore(IServiceProvider provider, RecordContext context)
         {
             _provider = provider;
+            _context = context;
         }
 
         public PlayerRecord SaveRecord(PlayerRecord record)
         {
-            return _records[record.RecordId] = record;
+            lock (_context)
+            {
+                _context.Records.Add(record);
+            }
+            return record;
         }
         public PlayerRecord RestoreRecord(Guid id)
         {
-            if (!_records.ContainsKey(id)) return null;
-            var rec = _records[id];
-            return rec;
+            lock (_context)
+            {
+                var rec = _context.Records.Find(id);
+                if (rec is null) return null;
+                return rec;
+            }
         }
         
         public MusiiGuild GetSessionNew(DiscordGuild guild)

@@ -13,7 +13,8 @@ namespace Encodeous.Musii.Commands
             {
                 if (!manager.HasPlayer)
                 {
-                    await ctx.RespondAsync("There is no music playing!");
+                    await ctx.RespondAsync(Messages.GenericError(
+                        "There is no music playing!", $"", ""));
                     return true;
                 }
             }
@@ -21,7 +22,8 @@ namespace Encodeous.Musii.Commands
             {
                 if (ctx.Member.VoiceState is null)
                 {
-                    await ctx.RespondAsync("You are not in a channel");
+                    await ctx.RespondAsync(Messages.GenericError(
+                        "You are not in a channel", $"", ""));
                     return true;
                 }
             }
@@ -29,17 +31,20 @@ namespace Encodeous.Musii.Commands
             {
                 if (!manager.HasPlayer)
                 {
-                    await ctx.RespondAsync("There is no music playing!");
+                    await ctx.RespondAsync(Messages.GenericError(
+                        "There is no music playing!", $"", ""));
                     return true;
                 }
                 if (ctx.Member.VoiceState is null)
                 {
-                    await ctx.RespondAsync("You are not in a channel");
+                    await ctx.RespondAsync(Messages.GenericError(
+                        "You are not in a channel", $"", ""));
                     return true;
                 }
                 if (manager.Player.Voice != ctx.Member.VoiceState.Channel)
                 {
-                    await ctx.RespondAsync("The bot is in another channel!");
+                    await ctx.RespondAsync(Messages.GenericError(
+                        "The bot is in another channel!", $"", ""));
                     return true;
                 }
             }
@@ -48,7 +53,8 @@ namespace Encodeous.Musii.Commands
             {
                 if (!ctx.HasPermission(Permissions.ManageMessages))
                 {
-                    await ctx.RespondAsync("You do not have permission to execute this command!");
+                    await ctx.RespondAsync(Messages.GenericError(
+                        "You do not have permission to execute this command!", $"", ""));
                     return true;
                 }
             }
@@ -56,12 +62,14 @@ namespace Encodeous.Musii.Commands
             {
                 if (!manager.HasPlayer)
                 {
-                    await ctx.RespondAsync("There is no music playing!");
+                    await ctx.RespondAsync(Messages.GenericError(
+                        "There is no music playing!", $"", ""));
                     return true;
                 }
                 if (!ctx.HasPermission(Permissions.ManageMessages) && manager.Player.State.IsLocked)
                 {
-                    await ctx.RespondAsync("The playlist is locked, you do not have access to it.");
+                    await ctx.RespondAsync(Messages.GenericError(
+                        "The playlist is locked, you do not have access to it.", $"", ""));
                     return true;
                 }
             }

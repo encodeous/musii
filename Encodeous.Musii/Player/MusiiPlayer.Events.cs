@@ -1,6 +1,8 @@
 ﻿using System.Threading.Tasks;
 using DSharpPlus.Lavalink.EventArgs;
 using Encodeous.Musii.Core;
+using Encodeous.Musii.Data;
+using Encodeous.Musii.Network;
 using Microsoft.Extensions.Logging;
 using Nito.AsyncEx.Synchronous;
 
@@ -25,34 +27,54 @@ namespace Encodeous.Musii.Player
             }
             await Stop(true);
         }
-        
+
         public async Task PlaybackFinished(TrackFinishEventArgs args)
         {
+            if (args.Reason == TrackEndReason.Replaced || args.Reason == TrackEndReason.Cleanup) return;
             await _manager.Trace(TraceSource.LLPlaybackFinish, new
             {
                 CurrentState = State,
                 args.Track,
                 args.Reason,
-                args.Handled
+                args.Handled,
+                State.Loop
             });
-            if (args.Reason == TrackEndReason.Finished)
+            if (State.Loop != LoopType.Off)
             {
-                if (await MoveNextAsync())
+                if (State.Loop == LoopType.Playlist)
                 {
-                    await PlayActiveSongAsync();
+                    await this.ExecuteSynchronized(async () =>
+                    {
+                        await _manager.Trace(TraceSource.MLoop, new
+                        {
+                            BeforeState = State
+                        });
+                        State.Tracks.Add(new YoutubeLazySource(State.CurrentTrack));
+                    });
+                }
+                else
+                {
+                    await this.ExecuteSynchronized(async () =>
+                    {
+                        await _manager.Trace(TraceSource.MLoop, new
+                        {
+                            BeforeState = State
+                        });
+                        State.Tracks.Insert(0, new YoutubeLazySource(State.CurrentTrack));
+                    });
                 }
             }
             if (args.Reason == TrackEndReason.LoadFailed)
             {
-                await Text.SendMessageAsync(Messages.GenericError("Track load failed", 
+                await Text.SendMessageAsync(Messages.GenericError("Track load failed",
                     $"The track `{args.Track.Title}` is not able to be played!", ""));
-                if (await MoveNextAsync())
-                {
-                    await PlayActiveSongAsync();
-                }
+            }
+            if (await MoveNextAsync())
+            {
+                await PlayActiveSongAsync();
             }
         }
-        
+
         public async Task TrackException(TrackExceptionEventArgs args)
         {
             await _manager.Trace(TraceSource.LLTrackException, new
@@ -79,16 +101,21 @@ namespace Encodeous.Musii.Player
         
         public void TrackUpdated(PlayerUpdateEventArgs args)
         {
-            _manager.Trace(TraceSource.LLTrackUpdated, new
+            if (args.Player.CurrentState.CurrentTrack == State.CurrentTrack)
             {
-                CurrentState = State,
-                args.Position,
-                args.Timestamp,
-                args.Handled
-            }).WaitAndUnwrapException();
-            State.CurrentTrack.SetPos((long) args.Position.TotalMilliseconds);
-            State.QueueUpdate.Set();
-            State.QueueUpdate.Reset();
+                _manager.Trace(TraceSource.LLTrackUpdated, new
+                {
+                    CurrentState = State,
+                    args.Position,
+                    args.Timestamp,
+                    args.Handled
+                }).WaitAndUnwrapException();
+                this.ExecuteSynchronized(() =>
+                {
+                    State.CurrentTrack.SetPos((long) args.Position.TotalMilliseconds);
+                    return Task.CompletedTask;
+                }, true).WaitAndUnwrapException();
+            }
         }
         
         #endregion
