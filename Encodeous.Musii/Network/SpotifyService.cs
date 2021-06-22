@@ -13,7 +13,7 @@ namespace Encodeous.Musii.Network
     {
         private SpotifyClient _client;
 
-        public SpotifyService(IConfiguration appConfig, ILogger<SpotifyClient> log)
+        public SpotifyService(IConfiguration appConfig, ILogger<SpotifyService> log)
         {
             var config = SpotifyClientConfig
                 .CreateDefault()

@@ -10,15 +10,17 @@
       <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.1" />
       <PackageReference Include="DSharpPlus.Lavalink" Version="4.0.1" />
       <PackageReference Include="DSharpPlus.VoiceNext" Version="4.0.1" />
+      <PackageReference Include="Humanizer.Core" Version="2.11.10" />
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="5.0.1" />
       <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
+      <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.0" />
       <PackageReference Include="ResourceLoader" Version="3.1.20095.1" />
       <PackageReference Include="SpotifyAPI.Web" Version="6.2.0" />
       <PackageReference Include="SpotifyAPI.Web.Auth" Version="6.2.0" />
-      <PackageReference Include="YoutubeExplode" Version="6.0.0" />
+      <PackageReference Include="YoutubeExplode" Version="6.0.2" />
     </ItemGroup>
 
     <ItemGroup>

@@ -41,10 +41,8 @@ namespace Encodeous.Musii
                     services.AddSingleton<YoutubeService>();
                     // add discord
                     AddDiscord(context, services);
-                    // per-play session services
-                    services.AddScoped<ScopeData>();
-                    services.AddScoped<SearchService>();
-                    services.AddScoped<MusicPlayer>();
+                    // add per-guild-services
+                    services.AddScoped<GuildPlayerManager>();
                     // add application
                     services.AddHostedService<HostedBot>();
                 }).Build();
@@ -91,9 +89,11 @@ namespace Encodeous.Musii
                 Services = collection
             });
             commands.RegisterCommands(Assembly.GetExecutingAssembly());
+            commands.SetHelpFormatter<MusiiHelpFormatter>();
             commands.CommandErrored += (sender, args) =>
             {
-                log.LogError($"Exception occurred while executing command: {args.Exception}");
+                log.LogDebug($"Command generated error: {args.Exception} ctx: {args.Context.Channel} {args.Context.Member} {args.Context.Message} ran-by: {args.Context.User.Id}");
+                args.Handled = true;
                 return Task.CompletedTask;
             };
             

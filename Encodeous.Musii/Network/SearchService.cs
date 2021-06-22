@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DSharpPlus.Lavalink;
 using Encodeous.Musii.Data;
 using Encodeous.Musii.Player;
 using YoutubeExplode.Playlists;
@@ -12,25 +13,35 @@ namespace Encodeous.Musii.Network
     {
         private SpotifyService _spotify;
         private YoutubeService _youtube;
-        private ScopeData _data;
-        private PlayerSessions _sessions;
+        private LavalinkGuildConnection _node;
 
-        public SearchService(SpotifyService spotify, ScopeData data, YoutubeService youtube, PlayerSessions sessions)
+        /// <summary>
+        /// DEPRECATED, REMOVE!!!
+        /// </summary>
+        /// <param name="spotify"></param>
+        /// <param name="data"></param>
+        /// <param name="youtube"></param>
+        public SearchService(SpotifyService spotify, ScopeData data, YoutubeService youtube)
         {
             _spotify = spotify;
-            _data = data;
+            _node = data.LavalinkNode;
             _youtube = youtube;
-            _sessions = sessions;
+        }
+        public SearchService(SpotifyService spotify, LavalinkGuildConnection node, YoutubeService youtube)
+        {
+            _spotify = spotify;
+            _node = node;
+            _youtube = youtube;
         }
 
-        public async Task<(IMusicSource[], string)> ParseGeneralAsync(string query)
+        public virtual async Task<(IMusicSource[], string)> ParseGeneralAsync(string query)
         {
             string[] keywords = query.Split(" ");
             if (IsPlaylist(keywords))
             {
                 try
                 {
-                    return (await _youtube.SearchPlaylist(keywords[0], _data.LavalinkNode), "");
+                    return (await _youtube.SearchPlaylist(keywords[0], _node), "");
                 }
                 catch
                 {
@@ -41,7 +52,7 @@ namespace Encodeous.Musii.Network
             {
                 try
                 {
-                    return (new []{await _youtube.SearchVideo(keywords[0], _data.LavalinkNode)}, "");
+                    return (new []{await _youtube.SearchVideo(keywords[0], _node)}, "");
                 }
                 catch
                 {
@@ -96,24 +107,11 @@ namespace Encodeous.Musii.Network
                     return (null, $"Failed to get Spotify track `{keywords[0]}`.");
                 }
             }
-            else if (Guid.TryParse(keywords[0], out var x))
-            {
-                var state = _sessions.CopyState(x);
-                if (state is null)
-                {
-                    return (null, "The playlist id was not found.");
-                }
-
-                var lst = new List<IMusicSource>();
-                if(state.CurrentTrack != null) lst.Add(new YoutubeSource(state.CurrentTrack));
-                lst.AddRange(state.Tracks);
-                return (lst.ToArray(), "");
-            }
             else
             {
                 try
                 {
-                    return (new IMusicSource[]{await _youtube.SearchVideo(keywords, _data.LavalinkNode)}, "");
+                    return (new IMusicSource[]{await _youtube.SearchVideo(keywords, _node)}, "");
                 }
                 catch
                 {

@@ -13,12 +13,7 @@ namespace Encodeous.Musii.Data
         private LavalinkTrack _cachedTrack = null;
         private string _query;
         private string _title;
-
-        /// <summary>
-        /// This constructor is meant for cloning
-        /// </summary>
-        public SpotifySource()
-        { }
+        
         public SpotifySource(FullTrack track)
         {
             var query = track.Name + " ";
@@ -51,16 +46,6 @@ namespace Encodeous.Musii.Data
         public string GetTrackName()
         {
             return _title;
-        }
-
-        public IMusicSource CloneSource()
-        {
-            return new SpotifySource()
-            {
-                _query = _query,
-                _title = new string(_title),
-                _cachedTrack = _cachedTrack?.CloneTrack()
-            };
         }
     }
 }

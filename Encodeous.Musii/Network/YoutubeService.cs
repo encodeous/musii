@@ -9,23 +9,26 @@ namespace Encodeous.Musii.Network
 {
     public class YoutubeService
     {
-        public async Task<YoutubeSource[]> SearchPlaylist(string link, LavalinkGuildConnection _conn)
+        public async Task<YoutubeSource[]> SearchPlaylist(string link, LavalinkGuildConnection conn)
         {
-            var videos = await _conn.GetTracksAsync(new Uri(link));
-            Debug.Assert(videos.LoadResultType == LavalinkLoadResultType.PlaylistLoaded);
+            var videos = await conn.GetTracksAsync(new Uri(link));
+            if (videos.LoadResultType != LavalinkLoadResultType.PlaylistLoaded)
+                throw new Exception("Unexpected result returned");
             return videos.Tracks.Select(x=>new YoutubeSource(x)).ToArray();
         }
         
-        public async Task<YoutubeSource> SearchVideo(string link, LavalinkGuildConnection _conn)
+        public async Task<YoutubeSource> SearchVideo(string link, LavalinkGuildConnection conn)
         {
-            var videos = await _conn.GetTracksAsync(new Uri(link));
-            Debug.Assert(videos.LoadResultType == LavalinkLoadResultType.TrackLoaded);
+            var videos = await conn.GetTracksAsync(new Uri(link));
+            if (videos.LoadResultType != LavalinkLoadResultType.TrackLoaded)
+                throw new Exception("Unexpected result returned");
             return new (videos.Tracks.First());
         }
-        public async Task<YoutubeSource> SearchVideo(string[] keywords, LavalinkGuildConnection _conn)
+        public async Task<YoutubeSource> SearchVideo(string[] keywords, LavalinkGuildConnection conn)
         {
-            var videos = await _conn.GetTracksAsync(string.Join(' ', keywords));
-            Debug.Assert(videos.LoadResultType == LavalinkLoadResultType.SearchResult);
+            var videos = await conn.GetTracksAsync(string.Join(' ', keywords));
+            if (videos.LoadResultType != LavalinkLoadResultType.SearchResult)
+                throw new Exception("Unexpected result returned");
             return new (videos.Tracks.First());
         }
     }

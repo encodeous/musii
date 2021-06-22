@@ -13,6 +13,5 @@ namespace Encodeous.Musii.Data
     {
         public Task<LavalinkTrack> GetTrack(LavalinkGuildConnection connection);
         public string GetTrackName();
-        public IMusicSource CloneSource();
     }
 }

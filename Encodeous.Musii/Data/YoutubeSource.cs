@@ -12,11 +12,6 @@ namespace Encodeous.Musii.Data
     public class YoutubeSource : IMusicSource
     {
         private LavalinkTrack _track;
-        /// <summary>
-        /// This constructor is meant for cloning
-        /// </summary>
-        public YoutubeSource()
-        { }
         public YoutubeSource(LavalinkTrack video)
         {
             _track = video;
@@ -29,14 +24,6 @@ namespace Encodeous.Musii.Data
         public string GetTrackName()
         {
             return _track.Title;
-        }
-
-        public IMusicSource CloneSource()
-        {
-            return new YoutubeSource()
-            {
-                _track = _track.CloneTrack()
-            };
         }
     }
 }

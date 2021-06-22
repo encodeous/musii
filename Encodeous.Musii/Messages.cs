@@ -8,6 +8,7 @@ namespace Encodeous.Musii
     public static class Messages
     {
         public static DiscordColor Success = DiscordColor.Green;
+        public static DiscordColor Info = DiscordColor.Blurple;
         public static DiscordColor Warning = DiscordColor.Purple;
         public static DiscordColor Error = DiscordColor.Red;
         #region Player Messages
@@ -46,19 +47,37 @@ namespace Encodeous.Musii
             return new DiscordMessageBuilder()
                 .WithEmbed(new DiscordEmbedBuilder()
                     .WithTitle("Your playback session has been saved.")
-                    .WithColor(DiscordColor.Gold)
-                    .WithDescription($"Resume listening by running the play command with \n `{data.State.StateId}`")
+                    .WithColor(Info)
+                    .WithDescription($"Resume listening to this playlist by running the play command with \n `{data.State.StateId}`")
                     .WithFooter($"Session saved."));
         }
+        public static DiscordMessageBuilder SessionResumeMessage()
+        {
+            return new DiscordMessageBuilder()
+                .WithEmbed(new DiscordEmbedBuilder()
+                    .WithTitle("Playlist Resumed")
+                    .WithColor(Info)
+                    .WithDescription($"The playlist will resume playing.")
+                    .WithFooter($"Success."));
+        }
         #endregion
-        public static DiscordMessageBuilder GenericError(this ScopeData data, string title, string body)
+        public static DiscordMessageBuilder GenericError(string title, string body, string footer)
         {
             return new DiscordMessageBuilder()
                 .WithEmbed(new DiscordEmbedBuilder()
                     .WithTitle(title)
                     .WithColor(Error)
                     .WithDescription(body)
-                    .WithFooter($"In {data.VoiceChannel.Name}"));
+                    .WithFooter(footer));
+        }
+        public static DiscordMessageBuilder GenericSuccess(string title, string body, string footer)
+        {
+            return new DiscordMessageBuilder()
+                .WithEmbed(new DiscordEmbedBuilder()
+                    .WithTitle(title)
+                    .WithColor(Success)
+                    .WithDescription(body)
+                    .WithFooter(footer));
         }
     }
 }

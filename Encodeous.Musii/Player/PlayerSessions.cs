@@ -20,6 +20,9 @@ namespace Encodeous.Musii.Player
     /// </summary>
     public class PlayerSessions
     {
+        private ConcurrentDictionary<ulong, GuildPlayerManager> _newSessions = new();
+        private ConcurrentDictionary<Guid, PlayerRecord> _records = new();
+
         private IServiceProvider _provider;
         private ConcurrentDictionary<ulong, MusicPlayer> _sessions = new();
         private ConcurrentDictionary<Guid, PlayerState> _states = new();
@@ -33,14 +36,48 @@ namespace Encodeous.Musii.Player
 
         public PlayerState CreateState()
         {
-            var state = new PlayerState();
+            var state = new PlayerState(new ());
             return _states[state.StateId] = state;
         }
         
-        public PlayerState CopyState(Guid id)
+        public PlayerState GetState(Guid id)
         {
             if (!_states.ContainsKey(id)) return null;
-            return _states[id].CloneState();
+            return _states[id];
+        }
+        
+        public PlayerRecord SaveRecord(PlayerRecord record)
+        {
+            return _records[record.RecordId] = record;
+        }
+        public PlayerRecord RestoreRecord(Guid id)
+        {
+            if (!_records.ContainsKey(id)) return null;
+            var rec = _records[id];
+            return rec;
+        }
+
+        public MusicPlayer GetSession(DiscordGuild guild)
+        {
+            if (_sessions.ContainsKey(guild.Id))
+            {
+                return _sessions[guild.Id];
+            }
+
+            return null;
+        }
+        
+        public GuildPlayerManager GetSessionNew(DiscordGuild guild)
+        {
+            if (_newSessions.ContainsKey(guild.Id))
+            {
+                return _newSessions[guild.Id];
+            }
+            else
+            {
+                var scope = _provider.CreateScope();
+                return _newSessions[guild.Id] = scope.ServiceProvider.GetRequiredService<GuildPlayerManager>();
+            }
         }
 
         public async Task<MusicPlayer> GetOrCreateSession(DiscordGuild guild, DiscordChannel voiceChannel, DiscordChannel textChannel)

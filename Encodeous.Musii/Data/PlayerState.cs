@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using DSharpPlus.Lavalink;
+using Nito.AsyncEx;
 
 namespace Encodeous.Musii.Data
 {
@@ -12,28 +13,47 @@ namespace Encodeous.Musii.Data
     /// </summary>
     public class PlayerState
     {
-        public Guid StateId = Guid.NewGuid();
-        public bool IsLooped = false;
-        public double Volume = 100;
-        public LavalinkTrack CurrentTrack = null;
-        public List<IMusicSource> Tracks = new List<IMusicSource>();
-        public SemaphoreSlim StateLock = new (1,1);
-
-        public PlayerState CloneState()
+        public PlayerState(PlayerRecord record)
         {
-            return new()
-            {
-                Volume = Volume,
-                IsLooped = IsLooped,
-                CurrentTrack = CurrentTrack?.CloneTrack(),
-                Tracks = Tracks.Select(x => x.CloneSource()).ToList()
-            };
+            Tracks = record.Tracks.ToList();
+            IsLooped = record.IsLooped;
+            Volume = record.Volume;
+            if(record.CurrentTrack != null) CurrentTrack = record.CurrentTrack.CloneTrack();
+            IsPaused = record.IsPaused;
+            StartTime = DateTime.UtcNow;
         }
+        /// <summary>
+        /// To be removed
+        /// </summary>
+        public Guid StateId = Guid.NewGuid();
+        public bool IsLooped;
+        public bool IsLocked;
+        public int Volume;
+        public LavalinkTrack CurrentTrack;
+        public List<IMusicSource> Tracks;
+        public AsyncManualResetEvent QueueUpdate = new(false);
+        public readonly SemaphoreSlim StateLock = new (1,1);
+        public bool IsPaused;
+        public DateTime StartTime;
+        /// <summary>
+        /// To be removed
+        /// </summary>
+        public bool IsPlaying = false;
 
-        public override bool Equals(object obj)
+        /// <summary>
+        /// Saves the current state as an immutable record
+        /// </summary>
+        /// <returns></returns>
+        public PlayerRecord SaveRecord()
         {
-            if (obj is null || obj.GetType() != typeof(PlayerState)) return false;
-            return ((PlayerState) obj).StateId == StateId;
+            return new ()
+            {
+                IsLooped = IsLooped,
+                Volume = Volume,
+                CurrentTrack = CurrentTrack.CloneTrack(),
+                Tracks = Tracks.ToArray(),
+                IsPaused = IsPaused
+            };
         }
     }
 }
