@@ -1,6 +1,8 @@
 ﻿using System.Threading.Tasks;
 using DSharpPlus.Lavalink.EventArgs;
+using Encodeous.Musii.Core;
 using Microsoft.Extensions.Logging;
+using Nito.AsyncEx.Synchronous;
 
 namespace Encodeous.Musii.Player
 {
@@ -10,6 +12,11 @@ namespace Encodeous.Musii.Player
 
         public async Task WsClosed(WebSocketCloseEventArgs args)
         {
+            await _manager.Trace(TraceSource.LLWebsocketClose, new
+            {
+                CurrentState = State,
+                args
+            });
             if (args.Code == 4014)
             {
                 await Text.SendMessageAsync(Messages.GenericError(
@@ -21,6 +28,13 @@ namespace Encodeous.Musii.Player
         
         public async Task PlaybackFinished(TrackFinishEventArgs args)
         {
+            await _manager.Trace(TraceSource.LLPlaybackFinish, new
+            {
+                CurrentState = State,
+                args.Track,
+                args.Reason,
+                args.Handled
+            });
             if (args.Reason == TrackEndReason.Finished)
             {
                 if (await MoveNextAsync())
@@ -41,6 +55,11 @@ namespace Encodeous.Musii.Player
         
         public async Task TrackException(TrackExceptionEventArgs args)
         {
+            await _manager.Trace(TraceSource.LLTrackException, new
+            {
+                CurrentState = State,
+                args
+            });
             await Task.Delay(1000);
             await PlayActiveSongAsync();
             _log.LogError($"Playback encountered error {args.Error} in channel {args.Player.Channel}");
@@ -48,6 +67,11 @@ namespace Encodeous.Musii.Player
         
         public async Task TrackStuck(TrackStuckEventArgs args)
         {
+            await _manager.Trace(TraceSource.LLTrackStuck, new
+            {
+                CurrentState = State,
+                args
+            });
             await Task.Delay(1000);
             await PlayActiveSongAsync();
             _log.LogDebug($"Track stuck in channel {args.Player.Channel}");
@@ -55,6 +79,13 @@ namespace Encodeous.Musii.Player
         
         public void TrackUpdated(PlayerUpdateEventArgs args)
         {
+            _manager.Trace(TraceSource.LLTrackUpdated, new
+            {
+                CurrentState = State,
+                args.Position,
+                args.Timestamp,
+                args.Handled
+            }).WaitAndUnwrapException();
             State.CurrentTrack.SetPos((long) args.Position.TotalMilliseconds);
             State.QueueUpdate.Set();
             State.QueueUpdate.Reset();

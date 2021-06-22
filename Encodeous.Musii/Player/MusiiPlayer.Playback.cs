@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
+using Encodeous.Musii.Core;
+using Encodeous.Musii.Data;
 using Encodeous.Musii.Network;
 
 namespace Encodeous.Musii.Player
@@ -13,6 +16,11 @@ namespace Encodeous.Musii.Player
         {
             return this.ExecuteSynchronized(async () =>
             {
+                await _manager.Trace(TraceSource.MVolume, new
+                {
+                    BeforeState = State,
+                    NewVolume = vol
+                });
                 State.Volume = vol;
                 await _manager.Node.SetVolumeAsync(vol);
             }, true);
@@ -20,13 +28,24 @@ namespace Encodeous.Musii.Player
 
         public Task ShuffleAsync()
         {
-            return this.ExecuteSynchronized(async () => { State.Tracks.Shuffle(); }, true);
+            return this.ExecuteSynchronized(async () =>
+            {
+                await _manager.Trace(TraceSource.MShuffle, new
+                {
+                    BeforeState = State
+                });
+                State.Tracks.Shuffle();
+            }, true);
         }
 
         public Task<bool> TogglePause()
         {
             return this.ExecuteSynchronized(async () =>
             {
+                await _manager.Trace(TraceSource.MPause, new
+                {
+                    BeforeState = State
+                });
                 if (State.IsPaused)
                 {
                     await _manager.Node.ResumeAsync();
@@ -43,10 +62,14 @@ namespace Encodeous.Musii.Player
         
         public Task<bool> ToggleLock()
         {
-            return this.ExecuteSynchronized(() =>
+            return this.ExecuteSynchronized(async () =>
             {
+                await _manager.Trace(TraceSource.MLock, new
+                {
+                    BeforeState = State
+                });
                 State.IsLocked = !State.IsLocked;
-                return Task.FromResult(State.IsLocked);
+                return State.IsLocked;
             });
         }
 
@@ -54,6 +77,15 @@ namespace Encodeous.Musii.Player
         {
             return this.ExecuteSynchronized(async () =>
             {
+                await _manager.Trace(TraceSource.MSkip, new
+                {
+                    BeforeState = State,
+                    BeforeTrackCount = State.Tracks.Count,
+                    l,
+                    r,
+                    IsValid = !(l > r || l < 0 || r > State.Tracks.Count),
+                    SkipCurrent = l == 0
+                });
                 if (l > r || l < 0 || r > State.Tracks.Count) return false;
 
                 int nl = Math.Max(0, l - 1);
@@ -71,6 +103,11 @@ namespace Encodeous.Musii.Player
 
         public async Task AddTracks(IMusicSource[] tracks, CommandContext ctx = null)
         {
+            await _manager.Trace(TraceSource.MAdd, new
+            {
+                CurrentState = State,
+                TrackCount = tracks.Length
+            });
             if (tracks.Length == 1)
             {
                 if (ctx != null)

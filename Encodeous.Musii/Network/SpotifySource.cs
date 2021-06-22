@@ -8,8 +8,8 @@ namespace Encodeous.Musii.Network
     public class SpotifySource : IMusicSource
     {
         private bool _hasQueried = false;
-        private LavalinkTrack _cachedTrack = null;
-        private string _query;
+        public LavalinkTrack Track = null;
+        public string BuiltQuery;
         private string _title;
         
         public SpotifySource(FullTrack track)
@@ -19,7 +19,7 @@ namespace Encodeous.Musii.Network
             {
                 query += a.Name + " ";
             }
-            _query = query;
+            BuiltQuery = query;
             _title = track.Name;
         }
         public SpotifySource(SimpleTrack track)
@@ -29,16 +29,16 @@ namespace Encodeous.Musii.Network
             {
                 query += a.Name + " ";
             }
-            _query = query;
+            BuiltQuery = query;
             _title = track.Name;
         }
 
         public async Task<LavalinkTrack> GetTrack(LavalinkGuildConnection connection)
         {
-            if (_hasQueried) return _cachedTrack;
+            if (_hasQueried) return Track;
             _hasQueried = true;
-            var res = await connection.GetTracksAsync(_query);
-            return _cachedTrack = res.Tracks.First();
+            var res = await connection.GetTracksAsync(BuiltQuery);
+            return Track = res.Tracks.First();
         }
 
         public string GetTrackName()

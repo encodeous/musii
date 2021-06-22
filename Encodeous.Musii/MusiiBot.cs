@@ -101,9 +101,9 @@ namespace Encodeous.Musii
             
             if (Directory.Exists("/etc/systemd/system/") && !SystemdHelpers.IsSystemdService())
             {
-                log.LogWarning("Musii has detected that your system has systemd. " +
-                               "It is highly recommended to run Musii under systemd. " +
-                               "See: https://devblogs.microsoft.com/dotnet/net-core-and-systemd/ for setup instructions");
+                log.LogWarning(Constants.BotName + " has detected that your system has systemd. " +
+                                                "It is highly recommended to run Musii under systemd. " +
+                                                "See: https://devblogs.microsoft.com/dotnet/net-core-and-systemd/ for setup instructions");
             }
         }
     }

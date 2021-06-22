@@ -16,14 +16,12 @@ namespace Encodeous.Musii
     {
         protected DiscordEmbedBuilder _embed;
         protected CommandContext _context;
-        private IConfiguration _config;
         private string _pre;
         private bool _root = true;
-        public MusiiHelpFormatter(CommandContext ctx, IConfiguration config) : base(ctx)
+        public MusiiHelpFormatter(CommandContext ctx) : base(ctx)
         {
-            _config = config;
             _embed = new DiscordEmbedBuilder();
-            _embed.WithTitle($"{_config["musii:BotName"]} help");
+            _embed.WithTitle($"{Constants.BotName} help");
             _embed.WithFooter("No help found");
             _embed.WithColor(DiscordColor.Cyan);
             _context = ctx;

@@ -125,14 +125,11 @@ namespace Encodeous.Musii.Player
             var builder = new DiscordEmbedBuilder()
                 .WithTitle($"Queue for {Voice.Name} - Page {page + 1}/{tpages}");
 
-            if (sel.Count >= 1)
-            {
-                var selTrack = State.CurrentTrack;
-                builder.AddField("Now playing",
-                    $"`{selTrack.Title}`\n{Utils.GetProgress(selTrack.Position / selTrack.Length)}\n" +
-                    $"**{selTrack.Position.MusiiFormat()} / {selTrack.Length.MusiiFormat()}**");
-            }
-            else
+            var selTrack = State.CurrentTrack;
+            builder.AddField("Now playing",
+                $"`{selTrack.Title}`\n{Utils.GetProgress(selTrack.Position / selTrack.Length)}\n" +
+                $"**{selTrack.Position.MusiiFormat()} / {selTrack.Length.MusiiFormat()}**");
+            if(sel.Count == 0)
             {
                 builder.WithDescription("Queue is empty.");
             }
@@ -161,6 +158,7 @@ namespace Encodeous.Musii.Player
             }
 
             builder.WithFooter(footer);
+            builder.WithThumbnail(State.CurrentTrack.GetThumbnail());
             return builder;
         }
 

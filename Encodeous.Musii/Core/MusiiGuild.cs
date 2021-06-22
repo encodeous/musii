@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus;
@@ -8,6 +11,7 @@ using Encodeous.Musii.Data;
 using Encodeous.Musii.Player;
 using Encodeous.Musii.Search;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Nito.AsyncEx;
 
 namespace Encodeous.Musii.Core
@@ -23,6 +27,8 @@ namespace Encodeous.Musii.Core
         private ILogger _log;
         private SpotifyService _spotify;
         private SearchService _searcher = null;
+        private DiscordChannel _traceLog = null;
+        private HashSet<TraceSource> _traceFilter = new HashSet<TraceSource>();
 
         public MusiiGuild(DiscordClient client, ILogger<MusiiPlayer> log, SpotifyService spotify, MusiiCore sessions)
         {
@@ -30,6 +36,24 @@ namespace Encodeous.Musii.Core
             _log = log;
             _spotify = spotify;
             Sessions = sessions;
+        }
+
+        public void SetTraceDestination(DiscordChannel channel, TraceSource[] filter)
+        {
+            _traceLog = channel;
+            _traceFilter = filter.ToHashSet();
+        }
+
+        public async Task Trace(TraceSource source, dynamic traceData)
+        {
+            if (_traceLog is not null && _traceFilter.Contains(source))
+            {
+                var eb = new DiscordEmbedBuilder()
+                    .WithFooter($"TRACE - {source}")
+                    .WithColor(DiscordColor.Blurple)
+                    .WithDescription($"```json\n{JsonConvert.SerializeObject(traceData, Formatting.Indented)}\n```");
+                await _traceLog.SendMessageAsync(eb);
+            }
         }
 
         public SearchService GetSearcher()

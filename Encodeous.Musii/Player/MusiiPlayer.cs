@@ -50,6 +50,10 @@ namespace Encodeous.Musii.Player
         
         public async Task Stop(bool saveRecord = false)
         {
+            await _manager.Trace(TraceSource.MStop, new
+            {
+                saveRecord
+            });
             _stopped = true;
             if (saveRecord)
             {
@@ -61,6 +65,11 @@ namespace Encodeous.Musii.Player
         {
             return this.ExecuteSynchronized(async () =>
             {
+                await _manager.Trace(TraceSource.MMoveNext, new
+                {
+                    BeforeState = State,
+                    Syncronized = true
+                });
                 if (!State.Tracks.Any())
                 {
                     await Text.SendMessageAsync(_manager.PlaylistEmptyMessage());
@@ -83,6 +92,11 @@ namespace Encodeous.Musii.Player
         }
         private async Task<bool> MoveNextAsyncUnlocked()
         {
+            await _manager.Trace(TraceSource.MMoveNext, new
+            {
+                BeforeState = State,
+                Syncronized = false
+            });
             if (!State.Tracks.Any())
             {
                 await Text.SendMessageAsync(_manager.PlaylistEmptyMessage());
@@ -105,6 +119,11 @@ namespace Encodeous.Musii.Player
         {
             await this.ExecuteSynchronized(async () =>
             {
+                await _manager.Trace(TraceSource.MPlayPartialActive, new
+                {
+                    CurrentState = State,
+                    NewPos = pos
+                });
                 State.CurrentTrack.SetPos((long)pos.TotalMilliseconds);
                 await _manager.Node.PlayPartialAsync(State.CurrentTrack, pos, State.CurrentTrack.Length);
                 if (State.IsPaused) await _manager.Node.PauseAsync();
@@ -112,6 +131,10 @@ namespace Encodeous.Musii.Player
         }
         public async Task PlayActiveSongAsync()
         {
+            await _manager.Trace(TraceSource.MPlayActive, new
+            {
+                CurrentState = State
+            });
             await _manager.Node.PlayAsync(State.CurrentTrack);
         }
     }

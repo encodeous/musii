@@ -78,7 +78,7 @@ namespace Encodeous.Musii
         }
         public static string GetProgress(double percent)
         {
-            int bars = (int)Math.Floor(percent * 40.0);
+            int bars = (int)Math.Floor(percent * 35.0);
             string k = "**";
             for (int i = 0; i < bars; i++)
             {
@@ -87,7 +87,7 @@ namespace Encodeous.Musii
 
             k += "⬤**";
 
-            for (int i = 0; i < (40 - bars); i++)
+            for (int i = 0; i < (35 - bars); i++)
             {
                 k += "═";
             }

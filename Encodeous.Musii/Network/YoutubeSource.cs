@@ -5,19 +5,19 @@ namespace Encodeous.Musii.Network
 {
     public class YoutubeSource : IMusicSource
     {
-        private LavalinkTrack _track;
+        public LavalinkTrack Track;
         public YoutubeSource(LavalinkTrack video)
         {
-            _track = video;
+            Track = video;
         }
         public Task<LavalinkTrack> GetTrack(LavalinkGuildConnection connection)
         {
-            return Task.FromResult(_track);
+            return Task.FromResult(Track);
         }
 
         public string GetTrackName()
         {
-            return _track.Title;
+            return Track.Title;
         }
     }
 }

@@ -2,16 +2,17 @@
 
 ## `What is Musii`
 
-Musii is an alternative music bot to large public bots like Rythm. It is a private, customizable bot that suits your needs.
+Musii is an alternative music bot to large public bots like Rythm or Groovy. It is a private, customizable bot that suits your needs.
 
 ## `Features`
 
 In Musii v5, the features were overhauled and improved drastically
 
-**Feature Highlights:**
+**Feature Highlights (WIP):**
 - Convert Spotify Songs to YouTube for playback
-- Archive playlists in "records" to be played later
+- Archive playlists in "records" to be played later, or in another guild
 - Advanced and intuitive playback controls
+- Playlist "pinning" which supports 24/7 playback
 
 **Offered Controls (WIP):**
 - Movement of the playhead in real-time
@@ -21,6 +22,8 @@ In Musii v5, the features were overhauled and improved drastically
 - Shuffle Playlist
 - Skip / Skip Range
 - Locking playlist to moderators
+- Jump to a specific song
+- 
 
 
 
@@ -28,7 +31,7 @@ In Musii v5, the features were overhauled and improved drastically
 
 You can setup your own private music player with Musii in a few simple steps.
 
-1. Setup [Lavalink](https://github.com/Frederikam/Lavalink) on your server or use [F4stZ4p/HLavalink](https://github.com/F4stZ4p/HLavalink)
+1. Setup [Lavalink](https://github.com/freyacodes/Lavalink) on your server. I also highly recommend reading this [blog post](https://blog.arbjerg.dev/2020/3/tunnelbroker-with-lavalink)!
 2. Clone the repository and Compile Musii. For more information on how to build .NET apps, visit [.NET Docs](https://docs.microsoft.com/en-us/dotnet/fundamentals/)
 3. Go to the [Discord Developer Portal](https://discord.com/developers/applications) and create a bot
 4. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/) and create an application
@@ -53,7 +56,7 @@ As shown:
 }
 ```
 
-6. Execute Musii, make sure the LavaLink server is setup correctly and is reachable.
+6. Execute Musii, make sure the Lavalink server is setup correctly and is reachable.
 
 7. Invite the bot to your guild and `!help` to display help.
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using DSharpPlus.Lavalink;
 using Encodeous.Musii.Network;
+using Newtonsoft.Json;
 using Nito.AsyncEx;
 
 namespace Encodeous.Musii.Data
@@ -27,6 +28,7 @@ namespace Encodeous.Musii.Data
         public bool IsLocked;
         public int Volume;
         public LavalinkTrack CurrentTrack;
+        [JsonIgnore]
         public List<IMusicSource> Tracks;
         public AsyncManualResetEvent QueueUpdate = new(false);
         public readonly SemaphoreSlim StateLock = new (1,1);
