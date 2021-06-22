@@ -14,19 +14,7 @@ namespace Encodeous.Musii.Network
         private SpotifyService _spotify;
         private YoutubeService _youtube;
         private LavalinkGuildConnection _node;
-
-        /// <summary>
-        /// DEPRECATED, REMOVE!!!
-        /// </summary>
-        /// <param name="spotify"></param>
-        /// <param name="data"></param>
-        /// <param name="youtube"></param>
-        public SearchService(SpotifyService spotify, ScopeData data, YoutubeService youtube)
-        {
-            _spotify = spotify;
-            _node = data.LavalinkNode;
-            _youtube = youtube;
-        }
+        
         public SearchService(SpotifyService spotify, LavalinkGuildConnection node, YoutubeService youtube)
         {
             _spotify = spotify;

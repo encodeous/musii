@@ -42,7 +42,7 @@ namespace Encodeous.Musii
                     // add discord
                     AddDiscord(context, services);
                     // add per-guild-services
-                    services.AddScoped<GuildPlayerManager>();
+                    services.AddScoped<MusiiGuildManager>();
                     // add application
                     services.AddHostedService<HostedBot>();
                 }).Build();

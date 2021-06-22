@@ -22,10 +22,6 @@ namespace Encodeous.Musii.Data
             IsPaused = record.IsPaused;
             StartTime = DateTime.UtcNow;
         }
-        /// <summary>
-        /// To be removed
-        /// </summary>
-        public Guid StateId = Guid.NewGuid();
         public bool IsLooped;
         public bool IsLocked;
         public int Volume;
@@ -35,10 +31,6 @@ namespace Encodeous.Musii.Data
         public readonly SemaphoreSlim StateLock = new (1,1);
         public bool IsPaused;
         public DateTime StartTime;
-        /// <summary>
-        /// To be removed
-        /// </summary>
-        public bool IsPlaying = false;
 
         /// <summary>
         /// Saves the current state as an immutable record

@@ -11,10 +11,10 @@ using Nito.AsyncEx;
 
 namespace Encodeous.Musii.Player
 {
-    public class GuildPlayerManager
+    public class MusiiGuildManager
     {
         public bool HasPlayer { get; private set; } = false;
-        public NewMusicPlayer Player { get; private set; }
+        public MusiiPlayer Player { get; private set; }
         public LavalinkGuildConnection Node { get; private set; } = null;
         public PlayerSessions Sessions { get; private set; }
         
@@ -23,7 +23,7 @@ namespace Encodeous.Musii.Player
         private SpotifyService _spotify;
         private SearchService _searcher = null;
 
-        public GuildPlayerManager(DiscordClient client, ILogger<NewMusicPlayer> log, SpotifyService spotify, PlayerSessions sessions)
+        public MusiiGuildManager(DiscordClient client, ILogger<MusiiPlayer> log, SpotifyService spotify, PlayerSessions sessions)
         {
             _client = client;
             _log = log;
@@ -55,7 +55,7 @@ namespace Encodeous.Musii.Player
                 Node = conn.GetGuildConnection(voice.Guild);
                 PlayerRecord nRec = record;
                 if (nRec == null) nRec = new PlayerRecord();
-                var plr = new NewMusicPlayer(_log, this, _client, nRec, voice, text, GetSearcher());
+                var plr = new MusiiPlayer(_log, this, _client, nRec, voice, text, GetSearcher());
                 Node.DiscordWebSocketClosed += (_, b) => plr.WsClosed(b);
                 Node.PlaybackFinished += (_, b) => plr.PlaybackFinished(b);
                 Node.TrackException += (_, b) => plr.TrackException(b);
@@ -78,7 +78,7 @@ namespace Encodeous.Musii.Player
                 HasPlayer = false;
                 Player = null;
                 _searcher = null;
-                await text.SendMessageAsync(Messagesv2.FailedToJoin(voice));
+                await text.SendMessageAsync(Messages.FailedToJoin(voice));
             }
 
             return false;

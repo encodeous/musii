@@ -6,7 +6,7 @@ using Encodeous.Musii.Data;
 
 namespace Encodeous.Musii.Player
 {
-    public partial class NewMusicPlayer
+    public partial class MusiiPlayer
     {
         #region Playback Methods
         

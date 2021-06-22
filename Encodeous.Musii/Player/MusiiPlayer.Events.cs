@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Encodeous.Musii.Player
 {
-    public partial class NewMusicPlayer
+    public partial class MusiiPlayer
     {
         #region Lavalink Lifetime Events
 

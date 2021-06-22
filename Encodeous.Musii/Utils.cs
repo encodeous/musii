@@ -102,7 +102,7 @@ namespace Encodeous.Musii
             return (Math.Floor(timeSpan.TotalHours).ToString("00")) + ":" + timeSpan.Minutes.ToString("00") + ":" + timeSpan.Seconds.ToString("00");
         }
         
-        public static async Task<T> ExecuteSynchronized<T>(this NewMusicPlayer player, Func<Task<T>> func, bool qUpdate = false)
+        public static async Task<T> ExecuteSynchronized<T>(this MusiiPlayer player, Func<Task<T>> func, bool qUpdate = false)
         {
             await player.State.StateLock.WaitAsync();
             try
@@ -119,7 +119,7 @@ namespace Encodeous.Musii
                 }
             }
         }
-        public static async Task ExecuteSynchronized(this NewMusicPlayer player, Func<Task> func, bool qUpdate = false)
+        public static async Task ExecuteSynchronized(this MusiiPlayer player, Func<Task> func, bool qUpdate = false)
         {
             await player.State.StateLock.WaitAsync();
             try

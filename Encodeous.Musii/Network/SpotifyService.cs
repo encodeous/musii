@@ -23,21 +23,21 @@ namespace Encodeous.Musii.Network
         }
         public string ParsePlaylist(string url)
         {
-            var rx = new Regex("open.spotify.com/playlist/[0-9a-zA-Z]+");
+            var rx = new Regex("open.spotify.com/playlist/[0-9A-z]+");
             if (!rx.Match(url).Success) return "";
             return rx.Match(url).Value.Substring(26);
         }
 
         public string ParseAlbum(string url)
         {
-            var rx = new Regex("open.spotify.com/album/[0-9a-zA-Z]+");
+            var rx = new Regex("open.spotify.com/album/[0-9A-z]+");
             if (!rx.Match(url).Success) return "";
             return rx.Match(url).Value.Substring(23);
         }
 
         public string ParseTrack(string url)
         {
-            var rx = new Regex("open.spotify.com/track/[0-9a-zA-Z]+");
+            var rx = new Regex("open.spotify.com/track/[0-9A-z]+");
             if (!rx.Match(url).Success) return "";
             return rx.Match(url).Value.Substring(23);
         }

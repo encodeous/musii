@@ -25,7 +25,7 @@ namespace Encodeous.Musii.Player
     ///
     /// Absolutely NO Lavalink connection code should be in this class!
     /// </summary>
-    public partial class NewMusicPlayer
+    public partial class MusiiPlayer
     {
         #region Props and Fields
 
@@ -34,7 +34,7 @@ namespace Encodeous.Musii.Player
         private DiscordMessage _queueMessage = null;
         private SearchService _search;
         private ILogger _log;
-        private GuildPlayerManager _manager;
+        private MusiiGuildManager _manager;
         private bool _stopped = false;
 
         #endregion
@@ -43,7 +43,7 @@ namespace Encodeous.Musii.Player
         internal PlayerState State;
         internal DiscordChannel Voice, Text;
 
-        public NewMusicPlayer(ILogger log, GuildPlayerManager manager, DiscordClient client, PlayerRecord record, DiscordChannel voice, DiscordChannel text, SearchService search)
+        public MusiiPlayer(ILogger log, MusiiGuildManager manager, DiscordClient client, PlayerRecord record, DiscordChannel voice, DiscordChannel text, SearchService search)
         {
             _log = log;
             _manager = manager;
@@ -65,17 +65,6 @@ namespace Encodeous.Musii.Player
             }
             await _manager.StopAsync(true);
         }
-        
-        public async Task SetPosition(TimeSpan pos)
-        {
-            await this.ExecuteSynchronized(async () =>
-            {
-                State.CurrentTrack.SetPos((long)pos.TotalMilliseconds);
-                await _manager.Node.PlayPartialAsync(State.CurrentTrack, pos, State.CurrentTrack.Length);
-                if (State.IsPaused) await _manager.Node.PauseAsync();
-            }, true);
-        }
-        
         public Task<bool> MoveNextAsync()
         {
             return this.ExecuteSynchronized(async () =>
@@ -119,6 +108,15 @@ namespace Encodeous.Musii.Player
                 State.Tracks.Add(new YoutubeSource(cur));
             }
             return true;
+        }
+        public async Task SetPosition(TimeSpan pos)
+        {
+            await this.ExecuteSynchronized(async () =>
+            {
+                State.CurrentTrack.SetPos((long)pos.TotalMilliseconds);
+                await _manager.Node.PlayPartialAsync(State.CurrentTrack, pos, State.CurrentTrack.Length);
+                if (State.IsPaused) await _manager.Node.PauseAsync();
+            }, true);
         }
         public async Task PlayActiveSongAsync()
         {

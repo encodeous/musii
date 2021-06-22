@@ -55,7 +55,7 @@ namespace Encodeous.Musii.Commands
 
                 freshSession = true;
                 await mgr.CreatePlayerAsync(ctx.Member.VoiceState.Channel,ctx.Channel, state);
-                await ctx.RespondAsync(Messagesv2.RecordRestoreMessage());
+                await ctx.RespondAsync(Messages.RecordRestoreMessage());
             }
             else
             {
