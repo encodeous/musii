@@ -14,7 +14,6 @@ namespace Encodeous.Musii.Data
         [Key]
         public Guid RecordId { get; } = Guid.NewGuid();
         public LoopType Loop { get; init; } = LoopType.Off;
-        public int Volume { get; init; } = 100;
         public BaseMusicSource CurrentTrack { get; init; } = null;
         public TimeSpan CurrentPosition { get; init; } = TimeSpan.Zero;
         public IReadOnlyList<BaseMusicSource> Tracks { get; init; } = new List<BaseMusicSource>();

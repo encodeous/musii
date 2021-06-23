@@ -24,7 +24,7 @@ namespace Encodeous.Musii.Player
                 });
                 State.Volume = vol;
                 await _manager.Node.SetVolumeAsync(vol);
-            }, true);
+            });
         }
 
         public Task ShuffleAsync()
@@ -36,7 +36,7 @@ namespace Encodeous.Musii.Player
                     BeforeState = State
                 });
                 State.Tracks.Shuffle();
-            }, true);
+            });
         }
 
         public Task<bool> TogglePauseAsync()
@@ -58,7 +58,7 @@ namespace Encodeous.Musii.Player
 
                 State.IsPaused = !State.IsPaused;
                 return State.IsPaused;
-            }, true);
+            });
         }
         
         public Task<bool> ToggleLockAsync()
@@ -142,7 +142,7 @@ namespace Encodeous.Musii.Player
                     await PlayActiveSongAsync();
                 }
                 return true;
-            }, true);
+            });
         }
         
         public Task<bool> JumpAsync(int count)
@@ -180,7 +180,7 @@ namespace Encodeous.Musii.Player
                 }
                
                 return true;
-            }, true);
+            });
         }
 
         public async Task AddTracksAsync(BaseMusicSource[] tracks, CommandContext ctx = null)
@@ -206,7 +206,7 @@ namespace Encodeous.Musii.Player
             {
                 State.Tracks.AddRange(tracks);
                 return Task.CompletedTask;
-            }, true);
+            });
         }
         
         #endregion

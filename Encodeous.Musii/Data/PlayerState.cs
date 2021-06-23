@@ -19,26 +19,26 @@ namespace Encodeous.Musii.Data
         {
             Tracks = record.Tracks.ToList();
             Loop = record.Loop;
-            Volume = record.Volume;
             if(record.CurrentTrack != null) CurrentTrack = record.CurrentTrack.Clone();
             CurrentPosition = record.CurrentPosition;
             StartTime = DateTime.UtcNow;
             Filter = AudioFilter.None;
         }
-        public LoopType Loop;
-        public bool IsLocked;
+        // state-specific properties
         public int Volume;
+        public bool IsLocked;
         public AudioFilter Filter;
-        public BaseMusicSource CurrentTrack;
-        public TimeSpan CurrentPosition;
-        [JsonIgnore]
-        public List<BaseMusicSource> Tracks;
-        public AsyncManualResetEvent QueueUpdate = new(false);
         [JsonIgnore]
         public readonly SemaphoreSlim StateLock = new (1,1);
         public bool IsPaused;
         public bool IsPinned;
         public DateTime StartTime;
+        // data stored in records
+        public LoopType Loop;
+        public BaseMusicSource CurrentTrack;
+        public TimeSpan CurrentPosition;
+        [JsonIgnore]
+        public List<BaseMusicSource> Tracks;
 
         /// <summary>
         /// Saves the current state as an immutable record
@@ -50,7 +50,6 @@ namespace Encodeous.Musii.Data
             return new ()
             {
                 Loop = Loop,
-                Volume = Volume,
                 CurrentTrack = CurrentTrack?.Clone(),
                 CurrentPosition = CurrentPosition,
                 Tracks = mapped

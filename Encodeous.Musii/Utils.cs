@@ -99,7 +99,7 @@ namespace Encodeous.Musii
             return (Math.Floor(timeSpan.TotalHours).ToString("00")) + ":" + timeSpan.Minutes.ToString("00") + ":" + timeSpan.Seconds.ToString("00");
         }
         
-        public static async Task<T> ExecuteSynchronized<T>(this MusiiPlayer player, Func<Task<T>> func, bool qUpdate = false)
+        public static async Task<T> ExecuteSynchronized<T>(this MusiiPlayer player, Func<Task<T>> func)
         {
             await player.State.StateLock.WaitAsync();
             try
@@ -109,14 +109,9 @@ namespace Encodeous.Musii
             finally
             {
                 player.State.StateLock.Release();
-                if (qUpdate)
-                {
-                    player.State.QueueUpdate.Set();
-                    player.State.QueueUpdate.Reset();
-                }
             }
         }
-        public static async Task ExecuteSynchronized(this MusiiPlayer player, Func<Task> func, bool qUpdate = false)
+        public static async Task ExecuteSynchronized(this MusiiPlayer player, Func<Task> func)
         {
             await player.State.StateLock.WaitAsync();
             try
@@ -126,11 +121,6 @@ namespace Encodeous.Musii
             finally
             {
                 player.State.StateLock.Release();
-                if (qUpdate)
-                {
-                    player.State.QueueUpdate.Set();
-                    player.State.QueueUpdate.Reset();
-                }
             }
         }
     }

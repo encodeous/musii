@@ -95,7 +95,7 @@ namespace Encodeous.Musii.Player
         }
         public Task<bool> MoveNextAsync()
         {
-            return this.ExecuteSynchronized(MoveNextUnlockedAsync, true);
+            return this.ExecuteSynchronized(MoveNextUnlockedAsync);
         }
         private async Task<bool> MoveNextUnlockedAsync()
         {
@@ -127,7 +127,7 @@ namespace Encodeous.Musii.Player
                 State.CurrentPosition = pos;
                 var track = await _manager.ResolveTrackAsync(State.CurrentTrack);
                 await _manager.Node.PlayPartialAsync(track, pos, track.Length);
-            }, true);
+            });
         }
         public async Task PlayActiveSongAsync()
         {
