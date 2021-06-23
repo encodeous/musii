@@ -46,31 +46,7 @@ namespace Encodeous.Musii.Data
         /// <returns></returns>
         public PlayerRecord SaveRecord()
         {
-            var mapped = Tracks.Select(x =>
-            {
-                if (x is YoutubeSource x1)
-                {
-                    return (BaseMusicSource) new YoutubeLazySource(x1.Track);
-                }
-                else if (x is YoutubeLazySource x2)
-                {
-                    return new YoutubeLazySource(x2.TrackId, x2.Title);
-                }
-                else if (x is SpotifySource x3)
-                {
-                    return new SpotifySource()
-                    {
-                        Title = x3.Title,
-                        BuiltQuery = x3.BuiltQuery,
-                        HasQueried = false,
-                        Track = null
-                    };
-                }
-                else
-                {
-                    throw new Exception("Invalid Track Type");
-                }
-            }).ToList();
+            var mapped = Tracks.Select(x => x.Clone()).ToList();
             return new ()
             {
                 Loop = Loop,
