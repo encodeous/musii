@@ -3,14 +3,16 @@ using System;
 using Encodeous.Musii.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Encodeous.Musii.Migrations
 {
     [DbContext(typeof(RecordContext))]
-    partial class RecordContextModelSnapshot : ModelSnapshot
+    [Migration("20210623143239_AbstractCurrentSong")]
+    partial class AbstractCurrentSong
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

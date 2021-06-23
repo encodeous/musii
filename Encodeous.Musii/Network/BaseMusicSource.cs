@@ -10,5 +10,6 @@ namespace Encodeous.Musii.Network
     {
         public abstract Task<LavalinkTrack> GetTrack(LavalinkGuildConnection connection);
         public abstract string GetTrackName();
+        public abstract BaseMusicSource Clone();
     }
 }

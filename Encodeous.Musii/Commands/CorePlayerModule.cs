@@ -29,7 +29,7 @@ namespace Encodeous.Musii.Commands
                     "Invalid Query", $"Please specify a valid query", ""));
                 return;
             }
-            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            var mgr = _sessions.GetGuild(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireVoicestate, ctx)) return;
             if (mgr.HasPlayer && mgr.Player.Voice != ctx.Member.VoiceState.Channel)
             {
@@ -102,7 +102,7 @@ namespace Encodeous.Musii.Commands
         [RequireBotPermissions(Permissions.ManageMessages)]
         public async Task QueueCommand(CommandContext ctx, int page = 1)
         {
-            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            var mgr = _sessions.GetGuild(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel, ctx)) return;
@@ -115,7 +115,7 @@ namespace Encodeous.Musii.Commands
         [RequireUserPermissions(Permissions.ManageMessages)]
         public async Task LockCommand(CommandContext ctx)
         {
-            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            var mgr = _sessions.GetGuild(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel |
@@ -129,7 +129,7 @@ namespace Encodeous.Musii.Commands
         [RequireUserPermissions(Permissions.ManageMessages)]
         public async Task PinCommand(CommandContext ctx)
         {
-            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            var mgr = _sessions.GetGuild(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel |
@@ -151,7 +151,7 @@ namespace Encodeous.Musii.Commands
         [Cooldown(2, 4, CooldownBucketType.Guild)]
         public async Task SkipCommand(CommandContext ctx, int lowerBound, int upperBound)
         {
-            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            var mgr = _sessions.GetGuild(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel |
@@ -165,7 +165,7 @@ namespace Encodeous.Musii.Commands
 
             if (upperBound - lowerBound + 1 == 1)
             {
-                await ctx.RespondAsync(mgr.SkippedTrackMessage(mgr.Player.State.CurrentTrack));
+                await ctx.RespondAsync(await mgr.SkippedTrackMessageAsync());
             }
             if (await mgr.Player.SkipSongsAsync(lowerBound, upperBound))
             {

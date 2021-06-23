@@ -39,7 +39,7 @@ namespace Encodeous.Musii.Core
             }
         }
         
-        public MusiiGuild GetSessionNew(DiscordGuild guild)
+        public MusiiGuild GetGuild(DiscordGuild guild)
         {
             if (_newSessions.ContainsKey(guild.Id))
             {

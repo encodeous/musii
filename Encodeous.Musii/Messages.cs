@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
 using Encodeous.Musii.Core;
 using Humanizer;
+using Humanizer.Localisation;
 
 namespace Encodeous.Musii
 {
@@ -29,18 +31,19 @@ namespace Encodeous.Musii
                     .WithTitle("Song added to the queue")
                     .WithColor(Success)
                     .AddField(track.Title,
-                        $"{track.Length:g}", true)
+                        $"{track.Length.Humanize(4, minUnit: TimeUnit.Second)}", true)
                     .WithThumbnail(track.GetThumbnail())
                     .WithFooter($"In {data.Player.Voice.Name}"));
         }
-        public static DiscordMessageBuilder SkippedTrackMessage(this MusiiGuild data, LavalinkTrack track)
+        public static async Task<DiscordMessageBuilder> SkippedTrackMessageAsync(this MusiiGuild data)
         {
+            var track = await data.ResolveTrackAsync(data.Player.State.CurrentTrack);
             return new DiscordMessageBuilder()
                 .WithEmbed(new DiscordEmbedBuilder()
                     .WithTitle("Skipped Song")
                     .WithColor(Success)
                     .AddField(track.Title,
-                        $"{track.Length:g}", true)
+                        $"Played for {data.Player.State.CurrentPosition.Humanize(4, minUnit: TimeUnit.Second)}", true)
                     .WithThumbnail(track.GetThumbnail())
                     .WithFooter($"In {data.Player.Voice.Name}"));
         }

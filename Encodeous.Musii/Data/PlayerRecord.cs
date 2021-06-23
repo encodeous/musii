@@ -15,7 +15,8 @@ namespace Encodeous.Musii.Data
         public Guid RecordId { get; } = Guid.NewGuid();
         public LoopType Loop { get; init; } = LoopType.Off;
         public int Volume { get; init; } = 100;
-        public LavalinkTrack CurrentTrack { get; init; } = null;
+        public BaseMusicSource CurrentTrack { get; init; } = null;
+        public TimeSpan CurrentPosition { get; init; } = TimeSpan.Zero;
         public IReadOnlyList<BaseMusicSource> Tracks { get; init; } = new List<BaseMusicSource>();
     }
 }

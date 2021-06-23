@@ -16,7 +16,7 @@ namespace Encodeous.Musii.Player
 
         public async Task SendQueueMessageAsync(int startPage = 1)
         {
-            var msg = await Text.SendMessageAsync(BuildQueueEmbed(startPage - 1, await GetQueue(), _queueLength));
+            var msg = await Text.SendMessageAsync(await BuildQueueEmbed(startPage - 1, await GetQueue(), _queueLength));
             _queueMessage = msg;
             Task.Run(async () =>
             {
@@ -40,7 +40,7 @@ namespace Encodeous.Musii.Player
                     if (changed)
                     {
                         startTime = DateTime.UtcNow;
-                        await msg.ModifyAsync(async x => x.Embed = BuildQueueEmbed(curpg, cq));
+                        await msg.ModifyAsync(async x => x.Embed = await BuildQueueEmbed(curpg, cq));
                     }
                     changed = false;
                     var res = await msg.CollectReactionsAsync(TimeSpan.FromMilliseconds(500));
@@ -115,7 +115,7 @@ namespace Encodeous.Musii.Player
             });
         }
 
-        private DiscordEmbedBuilder BuildQueueEmbed(int page, List<BaseMusicSource> q, int itemsPerPage = 20)
+        private async Task<DiscordEmbedBuilder> BuildQueueEmbed(int page, List<BaseMusicSource> q, int itemsPerPage = 20)
         {
             // 20 items per pag
             int tpages = (int) Math.Ceiling((q.Count - 1) / (double)itemsPerPage);
@@ -126,10 +126,10 @@ namespace Encodeous.Musii.Player
             var builder = new DiscordEmbedBuilder()
                 .WithTitle($"Queue for {Voice.Name} - Page {page + 1}/{tpages}");
 
-            var selTrack = State.CurrentTrack;
+            var selTrack = await _manager.ResolveTrackAsync(State.CurrentTrack);
             builder.AddField("Now playing",
-                $"`{selTrack.Title}`\n{Utils.GetProgress(selTrack.Position / selTrack.Length)}\n" +
-                $"**{selTrack.Position.MusiiFormat()} / {selTrack.Length.MusiiFormat()}**");
+                $"`{selTrack.Title}`\n{Utils.GetProgress(State.CurrentPosition / selTrack.Length)}\n" +
+                $"**{State.CurrentPosition.MusiiFormat()} / {selTrack.Length.MusiiFormat()}**");
             if(sel.Count == 0)
             {
                 builder.WithDescription("Queue is empty.");
@@ -173,7 +173,7 @@ namespace Encodeous.Musii.Player
             }
 
             builder.WithFooter(footer);
-            builder.WithThumbnail(State.CurrentTrack.GetThumbnail());
+            builder.WithThumbnail(selTrack.GetThumbnail());
             return builder;
         }
 
@@ -184,7 +184,7 @@ namespace Encodeous.Musii.Player
                 var lst = new List<BaseMusicSource>();
                 if (State.CurrentTrack is not null)
                 {
-                    lst.Add(new YoutubeSource(State.CurrentTrack));
+                    lst.Add(State.CurrentTrack.Clone());
                 }
 
                 lst.AddRange(State.Tracks);

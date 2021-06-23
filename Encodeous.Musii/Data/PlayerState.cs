@@ -20,7 +20,8 @@ namespace Encodeous.Musii.Data
             Tracks = record.Tracks.ToList();
             Loop = record.Loop;
             Volume = record.Volume;
-            if(record.CurrentTrack != null) CurrentTrack = record.CurrentTrack.CloneTrack();
+            if(record.CurrentTrack != null) CurrentTrack = record.CurrentTrack.Clone();
+            CurrentPosition = record.CurrentPosition;
             StartTime = DateTime.UtcNow;
             Filter = AudioFilter.None;
         }
@@ -28,7 +29,8 @@ namespace Encodeous.Musii.Data
         public bool IsLocked;
         public int Volume;
         public AudioFilter Filter;
-        public LavalinkTrack CurrentTrack;
+        public BaseMusicSource CurrentTrack;
+        public TimeSpan CurrentPosition;
         [JsonIgnore]
         public List<BaseMusicSource> Tracks;
         public AsyncManualResetEvent QueueUpdate = new(false);
@@ -69,15 +71,12 @@ namespace Encodeous.Musii.Data
                     throw new Exception("Invalid Track Type");
                 }
             }).ToList();
-            if (CurrentTrack is not null)
-            {
-                mapped.Insert(0, new YoutubeLazySource(CurrentTrack));
-            }
             return new ()
             {
                 Loop = Loop,
                 Volume = Volume,
-                CurrentTrack = null,
+                CurrentTrack = CurrentTrack?.Clone(),
+                CurrentPosition = CurrentPosition,
                 Tracks = mapped
             };
         }

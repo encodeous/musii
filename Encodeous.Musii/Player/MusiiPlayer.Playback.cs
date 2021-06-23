@@ -138,7 +138,7 @@ namespace Encodeous.Musii.Player
                 if (l == 0)
                 {
                     // skip current song also
-                    await MoveNextAsyncUnlocked();
+                    await MoveNextUnlockedAsync();
                     await PlayActiveSongAsync();
                 }
                 return true;
@@ -164,18 +164,18 @@ namespace Encodeous.Musii.Player
                     {
                         int ridx = State.Tracks.Count + rjump;
                         var rsel = State.Tracks.GetRange(ridx, State.Tracks.Count - ridx);
-                        rsel.Add(new YoutubeLazySource(State.CurrentTrack));
+                        rsel.Add(State.CurrentTrack.Clone());
                         State.Tracks.RemoveRange(ridx, State.Tracks.Count - ridx);
                         State.Tracks.InsertRange(0, rsel);
                     }
                     else
                     {
                         var rsel = State.Tracks.GetRange(0,rjump-1);
-                        rsel.Insert(0, new YoutubeLazySource(State.CurrentTrack));
+                        rsel.Insert(0, State.CurrentTrack.Clone());
                         State.Tracks.RemoveRange(0, rjump-1);
                         State.Tracks.AddRange(rsel);
                     }
-                    await MoveNextAsyncUnlocked();
+                    await MoveNextUnlockedAsync();
                     await PlayActiveSongAsync();
                 }
                

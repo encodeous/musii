@@ -95,9 +95,9 @@ namespace Encodeous.Musii.Player
         }
         public Task<bool> MoveNextAsync()
         {
-            return this.ExecuteSynchronized(MoveNextAsyncUnlocked, true);
+            return this.ExecuteSynchronized(MoveNextUnlockedAsync, true);
         }
-        private async Task<bool> MoveNextAsyncUnlocked()
+        private async Task<bool> MoveNextUnlockedAsync()
         {
             await _manager.Trace(TraceSource.MMoveNext, new
             {
@@ -110,8 +110,9 @@ namespace Encodeous.Musii.Player
                 return false;
             }
             // Fetch track
-            State.CurrentTrack = await State.Tracks.First().GetTrack(_manager.Node);
+            State.CurrentTrack = State.Tracks.First();
             State.Tracks.RemoveAt(0);
+            State.CurrentPosition = TimeSpan.Zero;
             return true;
         }
         public async Task SetPosition(TimeSpan pos)
@@ -123,9 +124,9 @@ namespace Encodeous.Musii.Player
                     CurrentState = State,
                     NewPos = pos
                 });
-                State.CurrentTrack.SetPos((long)pos.TotalMilliseconds);
-                await _manager.Node.PlayPartialAsync(State.CurrentTrack, pos, State.CurrentTrack.Length);
-                if (State.IsPaused) await _manager.Node.PauseAsync();
+                State.CurrentPosition = pos;
+                var track = await _manager.ResolveTrackAsync(State.CurrentTrack);
+                await _manager.Node.PlayPartialAsync(track, pos, track.Length);
             }, true);
         }
         public async Task PlayActiveSongAsync()
@@ -134,7 +135,15 @@ namespace Encodeous.Musii.Player
             {
                 CurrentState = State
             });
-            await _manager.Node.PlayAsync(State.CurrentTrack);
+            var track = await _manager.ResolveTrackAsync(State.CurrentTrack);
+            if (State.CurrentPosition != TimeSpan.Zero)
+            {
+                await _manager.Node.PlayPartialAsync(track, State.CurrentPosition, track.Length);
+            }
+            else
+            {
+                await _manager.Node.PlayAsync(track);
+            }
         }
         public Task<bool> TogglePinAsync()
         {

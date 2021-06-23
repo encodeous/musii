@@ -26,5 +26,10 @@ namespace Encodeous.Musii.Network
         {
             return Track.Title;
         }
+
+        public override BaseMusicSource Clone()
+        {
+            return new YoutubeLazySource(Track);
+        }
     }
 }

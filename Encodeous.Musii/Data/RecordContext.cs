@@ -30,7 +30,7 @@ namespace Encodeous.Musii.Data
                 .Property(e => e.CurrentTrack)
                 .HasConversion(
                     v => JsonConvert.SerializeObject(v, settings),
-                    v => JsonConvert.DeserializeObject<LavalinkTrack>(v, settings));
+                    v => JsonConvert.DeserializeObject<BaseMusicSource>(v, settings));
             modelBuilder.Entity<PlayerRecord>().HasKey(x => x.RecordId);
         }
     }

@@ -49,5 +49,15 @@ namespace Encodeous.Musii.Network
         {
             return Title;
         }
+
+        public override BaseMusicSource Clone()
+        {
+            return new SpotifySource()
+            {
+                BuiltQuery = BuiltQuery,
+                HasQueried = false,
+                Title = Title
+            };
+        }
     }
 }

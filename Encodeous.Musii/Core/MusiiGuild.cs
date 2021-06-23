@@ -8,6 +8,7 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
 using Encodeous.Musii.Data;
+using Encodeous.Musii.Network;
 using Encodeous.Musii.Player;
 using Encodeous.Musii.Search;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -93,7 +94,7 @@ namespace Encodeous.Musii.Core
                 Node.PlaybackFinished += (_, b) => plr.PlaybackFinished(b);
                 Node.TrackException += (_, b) => plr.TrackException(b);
                 Node.TrackStuck += (_, b) => plr.TrackStuck(b);
-                Node.PlayerUpdated += (_, b) => { plr.TrackUpdated(b); return Task.CompletedTask; };
+                Node.PlayerUpdated += (_, b) => plr.TrackUpdated(b);
                 Player = plr;
                 return true;
             }
@@ -138,6 +139,11 @@ namespace Encodeous.Musii.Core
                 Player = null;
                 HasPlayer = false;
             }
+        }
+
+        public Task<LavalinkTrack> ResolveTrackAsync(BaseMusicSource source)
+        {
+            return source.GetTrack(Node);
         }
     }
 }

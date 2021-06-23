@@ -49,7 +49,7 @@ namespace Encodeous.Musii.Player
                         {
                             BeforeState = State
                         });
-                        State.Tracks.Add(new YoutubeLazySource(State.CurrentTrack));
+                        State.Tracks.Add(State.CurrentTrack.Clone());
                     });
                 }
                 else
@@ -60,7 +60,7 @@ namespace Encodeous.Musii.Player
                         {
                             BeforeState = State
                         });
-                        State.Tracks.Insert(0, new YoutubeLazySource(State.CurrentTrack));
+                        State.Tracks.Insert(0, State.CurrentTrack.Clone());
                     });
                 }
             }
@@ -99,9 +99,10 @@ namespace Encodeous.Musii.Player
             _log.LogDebug($"Track stuck in channel {args.Player.Channel}");
         }
         
-        public void TrackUpdated(PlayerUpdateEventArgs args)
+        public async Task TrackUpdated(PlayerUpdateEventArgs args)
         {
-            if (args.Player.CurrentState.CurrentTrack == State.CurrentTrack)
+            var track = await _manager.ResolveTrackAsync(State.CurrentTrack);
+            if (args.Player.CurrentState.CurrentTrack == track)
             {
                 _manager.Trace(TraceSource.LLTrackUpdated, new
                 {
@@ -110,11 +111,7 @@ namespace Encodeous.Musii.Player
                     args.Timestamp,
                     args.Handled
                 }).WaitAndUnwrapException();
-                this.ExecuteSynchronized(() =>
-                {
-                    State.CurrentTrack.SetPos((long) args.Position.TotalMilliseconds);
-                    return Task.CompletedTask;
-                }, true).WaitAndUnwrapException();
+                State.CurrentPosition = args.Position;
             }
         }
         

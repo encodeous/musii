@@ -24,7 +24,7 @@ namespace Encodeous.Musii.Commands
         [Cooldown(2, 4, CooldownBucketType.Guild)]
         public async Task PauseCommand(CommandContext ctx)
         {
-            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            var mgr = _sessions.GetGuild(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel |
@@ -44,7 +44,7 @@ namespace Encodeous.Musii.Commands
         [Cooldown(2, 4, CooldownBucketType.Guild)]
         public async Task ShuffleCommand(CommandContext ctx)
         {
-            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            var mgr = _sessions.GetGuild(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel |
@@ -58,7 +58,7 @@ namespace Encodeous.Musii.Commands
         [Cooldown(2, 4, CooldownBucketType.Guild)]
         public async Task LoopCommand(CommandContext ctx, [RemainingText] string type)
         {
-            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            var mgr = _sessions.GetGuild(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel |
@@ -90,7 +90,7 @@ namespace Encodeous.Musii.Commands
         [Cooldown(2, 4, CooldownBucketType.Guild)]
         public async Task JumpCommand(CommandContext ctx, int jumpAmount)
         {
-            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            var mgr = _sessions.GetGuild(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel |
@@ -119,7 +119,7 @@ namespace Encodeous.Musii.Commands
         [Cooldown(2, 4, CooldownBucketType.Guild)]
         public async Task VolumeCommand(CommandContext ctx, int volume)
         {
-            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            var mgr = _sessions.GetGuild(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel |
@@ -152,7 +152,7 @@ namespace Encodeous.Musii.Commands
         [Cooldown(2, 4, CooldownBucketType.Guild)]
         public async Task FilterCommand(CommandContext ctx, string filter)
         {
-            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            var mgr = _sessions.GetGuild(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel |
@@ -193,7 +193,7 @@ namespace Encodeous.Musii.Commands
         [Cooldown(3, 60, CooldownBucketType.Guild)]
         public async Task SaveCommand(CommandContext ctx)
         {
-            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            var mgr = _sessions.GetGuild(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel, ctx)) return;
@@ -204,7 +204,7 @@ namespace Encodeous.Musii.Commands
         [Cooldown(2, 4, CooldownBucketType.Guild)]
         public async Task Seek(CommandContext ctx, string time)
         {
-            var mgr = _sessions.GetSessionNew(ctx.Guild);
+            var mgr = _sessions.GetGuild(ctx.Guild);
             if (await mgr.CheckIfFails(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel |
@@ -220,10 +220,11 @@ namespace Encodeous.Musii.Commands
             }
 
             var nts = TimeSpan.Zero;
-            if (!absolute) nts = mgr.Player.State.CurrentTrack.Position;
+            if (!absolute) nts = mgr.Player.State.CurrentPosition;
             nts += ts;
             if(nts <= TimeSpan.Zero) nts = TimeSpan.Zero;
-            if (nts >= mgr.Player.State.CurrentTrack.Length) nts = mgr.Player.State.CurrentTrack.Length - TimeSpan.FromMilliseconds(500);
+            var res = await mgr.ResolveTrackAsync(mgr.Player.State.CurrentTrack);
+            if (nts >= res.Length - TimeSpan.FromMilliseconds(500)) nts = res.Length - TimeSpan.FromMilliseconds(500);
 
             await mgr.Player.SetPosition(nts);
 
