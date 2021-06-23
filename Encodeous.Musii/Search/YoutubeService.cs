@@ -13,7 +13,7 @@ namespace Encodeous.Musii.Search
             var videos = await conn.GetTracksAsync(new Uri(link));
             if (videos.LoadResultType != LavalinkLoadResultType.PlaylistLoaded)
                 throw new Exception("Unexpected result returned");
-            return videos.Tracks.Select(x=>new YoutubeSource(x)).ToArray();
+            return videos.Tracks.Select(x=>new YoutubeSource(x, false)).ToArray();
         }
         
         public async Task<YoutubeSource> SearchVideo(string link, LavalinkGuildConnection conn)
@@ -21,14 +21,14 @@ namespace Encodeous.Musii.Search
             var videos = await conn.GetTracksAsync(new Uri(link));
             if (videos.LoadResultType != LavalinkLoadResultType.TrackLoaded)
                 throw new Exception("Unexpected result returned");
-            return new (videos.Tracks.First());
+            return new (videos.Tracks.First(), false);
         }
         public async Task<YoutubeSource> SearchVideo(string[] keywords, LavalinkGuildConnection conn)
         {
             var videos = await conn.GetTracksAsync(string.Join(' ', keywords));
             if (videos.LoadResultType != LavalinkLoadResultType.SearchResult)
                 throw new Exception("Unexpected result returned");
-            return new (videos.Tracks.First());
+            return new (videos.Tracks.First(), false);
         }
     }
 }

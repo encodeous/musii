@@ -9,7 +9,7 @@ namespace Encodeous.Musii.Network
     public class SpotifySource : BaseMusicSource
     {
         public bool HasQueried = false;
-        public LavalinkTrack Track = null;
+        private LavalinkTrack _cachedTrack = null;
         public string BuiltQuery;
         public string Title;
         [JsonConstructor]
@@ -39,10 +39,10 @@ namespace Encodeous.Musii.Network
 
         public override async Task<LavalinkTrack> GetTrack(LavalinkGuildConnection connection)
         {
-            if (HasQueried) return Track;
+            if (HasQueried) return _cachedTrack;
             HasQueried = true;
             var res = await connection.GetTracksAsync(BuiltQuery);
-            return Track = res.Tracks.First();
+            return _cachedTrack = res.Tracks.First();
         }
 
         public override string GetTrackName()
