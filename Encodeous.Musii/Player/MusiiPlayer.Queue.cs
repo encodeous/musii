@@ -179,7 +179,7 @@ namespace Encodeous.Musii.Player
 
         public Task<List<BaseMusicSource>> GetQueue()
         {
-            return this.ExecuteSynchronized(() =>
+            return ExecuteSynchronized(() =>
             {
                 var lst = new List<BaseMusicSource>();
                 if (State.CurrentTrack is not null)

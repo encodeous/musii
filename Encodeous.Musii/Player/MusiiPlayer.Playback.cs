@@ -15,7 +15,7 @@ namespace Encodeous.Musii.Player
         
         public Task SetVolumeAsync(int vol)
         {
-            return this.ExecuteSynchronized(async () =>
+            return ExecuteSynchronized(async () =>
             {
                 await _manager.Trace(TraceSource.MVolume, new
                 {
@@ -29,7 +29,7 @@ namespace Encodeous.Musii.Player
 
         public Task ShuffleAsync()
         {
-            return this.ExecuteSynchronized(async () =>
+            return ExecuteSynchronized(async () =>
             {
                 await _manager.Trace(TraceSource.MShuffle, new
                 {
@@ -41,7 +41,7 @@ namespace Encodeous.Musii.Player
 
         public Task<bool> TogglePauseAsync()
         {
-            return this.ExecuteSynchronized(async () =>
+            return ExecuteSynchronized(async () =>
             {
                 await _manager.Trace(TraceSource.MPause, new
                 {
@@ -63,7 +63,7 @@ namespace Encodeous.Musii.Player
         
         public Task<bool> ToggleLockAsync()
         {
-            return this.ExecuteSynchronized(async () =>
+            return ExecuteSynchronized(async () =>
             {
                 await _manager.Trace(TraceSource.MLock, new
                 {
@@ -76,7 +76,7 @@ namespace Encodeous.Musii.Player
         
         public Task<LoopType> SetLoopTypeAsync(LoopType loopType)
         {
-            return this.ExecuteSynchronized(async () =>
+            return ExecuteSynchronized(async () =>
             {
                 await _manager.Trace(TraceSource.MLoop, new
                 {
@@ -89,7 +89,7 @@ namespace Encodeous.Musii.Player
         
         public Task<AudioFilter> SetFilterTypeAsync(AudioFilter filterType)
         {
-            return this.ExecuteSynchronized(async () =>
+            return ExecuteSynchronized(async () =>
             {
                 await _manager.Trace(TraceSource.MFilter, new
                 {
@@ -119,7 +119,7 @@ namespace Encodeous.Musii.Player
 
         public Task<bool> SkipSongsAsync(int l, int r)
         {
-            return this.ExecuteSynchronized(async () =>
+            return ExecuteSynchronized(async () =>
             {
                 await _manager.Trace(TraceSource.MSkip, new
                 {
@@ -147,7 +147,7 @@ namespace Encodeous.Musii.Player
         
         public Task<bool> JumpAsync(int count)
         {
-            return this.ExecuteSynchronized(async () =>
+            return ExecuteSynchronized(async () =>
             {
                 await _manager.Trace(TraceSource.MJump, new
                 {
@@ -202,7 +202,7 @@ namespace Encodeous.Musii.Player
                 else await Text.SendMessageAsync(_manager.AddedTracksMessage(tracks.Length));
             }
 
-            await this.ExecuteSynchronized(() =>
+            await ExecuteSynchronized(() =>
             {
                 State.Tracks.AddRange(tracks);
                 return Task.CompletedTask;

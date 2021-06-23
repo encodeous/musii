@@ -43,7 +43,7 @@ namespace Encodeous.Musii.Player
             {
                 if (State.Loop == LoopType.Playlist)
                 {
-                    await this.ExecuteSynchronized(async () =>
+                    await ExecuteSynchronized(async () =>
                     {
                         await _manager.Trace(TraceSource.MLoop, new
                         {
@@ -54,7 +54,7 @@ namespace Encodeous.Musii.Player
                 }
                 else
                 {
-                    await this.ExecuteSynchronized(async () =>
+                    await ExecuteSynchronized(async () =>
                     {
                         await _manager.Trace(TraceSource.MLoop, new
                         {

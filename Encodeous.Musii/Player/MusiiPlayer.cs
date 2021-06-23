@@ -95,7 +95,7 @@ namespace Encodeous.Musii.Player
         }
         public Task<bool> MoveNextAsync()
         {
-            return this.ExecuteSynchronized(MoveNextUnlockedAsync);
+            return ExecuteSynchronized(MoveNextUnlockedAsync);
         }
         private async Task<bool> MoveNextUnlockedAsync()
         {
@@ -117,7 +117,7 @@ namespace Encodeous.Musii.Player
         }
         public async Task SetPosition(TimeSpan pos)
         {
-            await this.ExecuteSynchronized(async () =>
+            await ExecuteSynchronized(async () =>
             {
                 await _manager.Trace(TraceSource.MPlayPartialActive, new
                 {
@@ -147,7 +147,7 @@ namespace Encodeous.Musii.Player
         }
         public Task<bool> TogglePinAsync()
         {
-            return this.ExecuteSynchronized(async () =>
+            return ExecuteSynchronized(async () =>
             {
                 await _manager.Trace(TraceSource.MPin, new
                 {
@@ -156,6 +156,31 @@ namespace Encodeous.Musii.Player
                 State.IsPinned = !State.IsPinned;
                 return State.IsPinned;
             });
+        }
+        
+        public async Task<T> ExecuteSynchronized<T>(Func<Task<T>> func)
+        {
+            await State.StateLock.WaitAsync();
+            try
+            {
+                return await func();
+            }
+            finally
+            {
+                State.StateLock.Release();
+            }
+        }
+        public async Task ExecuteSynchronized(Func<Task> func)
+        {
+            await State.StateLock.WaitAsync();
+            try
+            {
+                await func();
+            }
+            finally
+            {
+                State.StateLock.Release();
+            }
         }
     }
 }
