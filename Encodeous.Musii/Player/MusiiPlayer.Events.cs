@@ -14,7 +14,7 @@ namespace Encodeous.Musii.Player
 
         public async Task WsClosed(WebSocketCloseEventArgs args)
         {
-            await _manager.Trace(TraceSource.LLWebsocketClose, new
+            await _guild.Trace(TraceSource.LLWebsocketClose, new
             {
                 CurrentState = State,
                 args
@@ -25,13 +25,13 @@ namespace Encodeous.Musii.Player
                     "Disconnected by Moderator", "The bot will leave", ""));
                 _log.LogDebug($"Bot voice websocket closed {args.Reason} with code {args.Code}");
             }
-            await Stop(true);
+            await StopAsync(true);
         }
 
         public async Task PlaybackFinished(TrackFinishEventArgs args)
         {
             if (args.Reason == TrackEndReason.Replaced || args.Reason == TrackEndReason.Cleanup) return;
-            await _manager.Trace(TraceSource.LLPlaybackFinish, new
+            await _guild.Trace(TraceSource.LLPlaybackFinish, new
             {
                 CurrentState = State,
                 args.Track,
@@ -45,7 +45,7 @@ namespace Encodeous.Musii.Player
                 {
                     await ExecuteSynchronized(async () =>
                     {
-                        await _manager.Trace(TraceSource.MLoop, new
+                        await _guild.Trace(TraceSource.MLoop, new
                         {
                             BeforeState = State
                         });
@@ -56,7 +56,7 @@ namespace Encodeous.Musii.Player
                 {
                     await ExecuteSynchronized(async () =>
                     {
-                        await _manager.Trace(TraceSource.MLoop, new
+                        await _guild.Trace(TraceSource.MLoop, new
                         {
                             BeforeState = State
                         });
@@ -77,7 +77,7 @@ namespace Encodeous.Musii.Player
 
         public async Task TrackException(TrackExceptionEventArgs args)
         {
-            await _manager.Trace(TraceSource.LLTrackException, new
+            await _guild.Trace(TraceSource.LLTrackException, new
             {
                 CurrentState = State,
                 args
@@ -89,7 +89,7 @@ namespace Encodeous.Musii.Player
         
         public async Task TrackStuck(TrackStuckEventArgs args)
         {
-            await _manager.Trace(TraceSource.LLTrackStuck, new
+            await _guild.Trace(TraceSource.LLTrackStuck, new
             {
                 CurrentState = State,
                 args
@@ -101,10 +101,10 @@ namespace Encodeous.Musii.Player
         
         public async Task TrackUpdated(PlayerUpdateEventArgs args)
         {
-            var track = await _manager.ResolveTrackAsync(State.CurrentTrack);
+            var track = await _guild.ResolveTrackAsync(State.CurrentTrack);
             if (args.Player.CurrentState.CurrentTrack == track)
             {
-                _manager.Trace(TraceSource.LLTrackUpdated, new
+                _guild.Trace(TraceSource.LLTrackUpdated, new
                 {
                     CurrentState = State,
                     args.Position,

@@ -26,26 +26,26 @@ namespace Encodeous.Musii.Player
 
         #region Private Data
 
-        private DiscordMessage _queueMessage = null;
+        private DiscordMessage _queueMessage;
         private ILogger _log;
-        private MusiiGuild _manager;
-        private bool _stopped = false;
+        private MusiiGuild _guild;
+        private bool _stopped;
         private int _queueLength;
         private TimeSpan _queueTimeout;
 
         #endregion
-        
-        internal DiscordClient Client;
+
+        private DiscordClient _client;
         internal PlayerState State;
         internal DiscordChannel Voice, Text;
 
-        public MusiiPlayer(ILogger log, MusiiGuild manager, DiscordClient client, 
+        public MusiiPlayer(ILogger log, MusiiGuild guild, DiscordClient client, 
             PlayerRecord record, DiscordChannel voice, DiscordChannel text, TimeSpan unpinnnedLeaveTime,
             int queueLength, TimeSpan queueTimeout)
         {
             _log = log;
-            _manager = manager;
-            Client = client;
+            _guild = guild;
+            _client = client;
             State = new PlayerState(record);
             Voice = voice;
             Text = text;
@@ -65,7 +65,7 @@ namespace Encodeous.Musii.Player
 
                         if (DateTime.UtcNow - leastTime > unpinnnedLeaveTime)
                         {
-                            await Stop(true, true);
+                            await StopAsync(true, true);
                         }
                     }
 
@@ -74,24 +74,24 @@ namespace Encodeous.Musii.Player
             });
             if (State.IsPaused)
             {
-                _manager.Node.PauseAsync().WaitAndUnwrapException();
+                _guild.Node.PauseAsync().WaitAndUnwrapException();
             }
         }
 
         #endregion
         
-        public async Task Stop(bool saveRecord = false, bool unpinnedLeave = false)
+        public async Task StopAsync(bool saveRecord = false, bool unpinnedLeave = false)
         {
-            await _manager.Trace(TraceSource.MStop, new
+            await _guild.Trace(TraceSource.MStop, new
             {
                 saveRecord
             });
             _stopped = true;
             if (saveRecord)
             {
-                await Text.SendMessageAsync(_manager.SaveSessionMessage(unpinnedLeave));
+                await Text.SendMessageAsync(_guild.SaveSessionMessage(unpinnedLeave));
             }
-            await _manager.StopAsync(true);
+            await _guild.StopAsync(true);
         }
         public Task<bool> MoveNextAsync()
         {
@@ -99,14 +99,14 @@ namespace Encodeous.Musii.Player
         }
         private async Task<bool> MoveNextUnlockedAsync()
         {
-            await _manager.Trace(TraceSource.MMoveNext, new
+            await _guild.Trace(TraceSource.MMoveNext, new
             {
                 BeforeState = State
             });
             if (!State.Tracks.Any())
             {
-                await Text.SendMessageAsync(_manager.PlaylistEmptyMessage());
-                await Stop();
+                await Text.SendMessageAsync(_guild.PlaylistEmptyMessage());
+                await StopAsync();
                 return false;
             }
             // Fetch track
@@ -115,41 +115,41 @@ namespace Encodeous.Musii.Player
             State.CurrentPosition = TimeSpan.Zero;
             return true;
         }
-        public async Task SetPosition(TimeSpan pos)
+        public async Task SetPositionAsync(TimeSpan pos)
         {
             await ExecuteSynchronized(async () =>
             {
-                await _manager.Trace(TraceSource.MPlayPartialActive, new
+                await _guild.Trace(TraceSource.MPlayPartialActive, new
                 {
                     CurrentState = State,
                     NewPos = pos
                 });
                 State.CurrentPosition = pos;
-                var track = await _manager.ResolveTrackAsync(State.CurrentTrack);
-                await _manager.Node.PlayPartialAsync(track, pos, track.Length);
+                var track = await _guild.ResolveTrackAsync(State.CurrentTrack);
+                await _guild.Node.PlayPartialAsync(track, pos, track.Length);
             });
         }
         public async Task PlayActiveSongAsync()
         {
-            await _manager.Trace(TraceSource.MPlayActive, new
+            await _guild.Trace(TraceSource.MPlayActive, new
             {
                 CurrentState = State
             });
-            var track = await _manager.ResolveTrackAsync(State.CurrentTrack);
+            var track = await _guild.ResolveTrackAsync(State.CurrentTrack);
             if (State.CurrentPosition != TimeSpan.Zero)
             {
-                await _manager.Node.PlayPartialAsync(track, State.CurrentPosition, track.Length);
+                await _guild.Node.PlayPartialAsync(track, State.CurrentPosition, track.Length);
             }
             else
             {
-                await _manager.Node.PlayAsync(track);
+                await _guild.Node.PlayAsync(track);
             }
         }
         public Task<bool> TogglePinAsync()
         {
             return ExecuteSynchronized(async () =>
             {
-                await _manager.Trace(TraceSource.MPin, new
+                await _guild.Trace(TraceSource.MPin, new
                 {
                     BeforeState = State
                 });

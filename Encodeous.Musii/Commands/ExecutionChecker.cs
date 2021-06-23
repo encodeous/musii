@@ -7,7 +7,7 @@ namespace Encodeous.Musii.Commands
 {
     public static class ExecutionChecker
     {
-        public static async Task<bool> CheckIfFails(this MusiiGuild manager, ExecutionFlags flags, CommandContext ctx)
+        public static async Task<bool> CheckIfFailsAsync(this MusiiGuild manager, ExecutionFlags flags, CommandContext ctx)
         {
             if (flags.HasFlag(ExecutionFlags.RequireHasPlayer))
             {

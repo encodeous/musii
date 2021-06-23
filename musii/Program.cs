@@ -3,4 +3,4 @@ using Encodeous.Musii;
 
 var musii = new MusiiBot();
 
-await musii.Run();
+await musii.RunAsync();

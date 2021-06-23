@@ -27,7 +27,7 @@ namespace Encodeous.Musii.Search
             {
                 try
                 {
-                    return (await _youtube.SearchPlaylist(keywords[0], _node), "");
+                    return (await _youtube.SearchPlaylistAsync(keywords[0], _node), "");
                 }
                 catch
                 {
@@ -38,7 +38,7 @@ namespace Encodeous.Musii.Search
             {
                 try
                 {
-                    return (new []{await _youtube.SearchVideo(keywords[0], _node)}, "");
+                    return (new []{await _youtube.SearchVideoAsync(keywords[0], _node)}, "");
                 }
                 catch
                 {
@@ -97,7 +97,7 @@ namespace Encodeous.Musii.Search
             {
                 try
                 {
-                    return (new BaseMusicSource[]{await _youtube.SearchVideo(keywords, _node)}, "");
+                    return (new BaseMusicSource[]{await _youtube.SearchVideoAsync(keywords, _node)}, "");
                 }
                 catch
                 {

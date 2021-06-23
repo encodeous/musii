@@ -17,13 +17,13 @@ namespace Encodeous.Musii.Player
         {
             return ExecuteSynchronized(async () =>
             {
-                await _manager.Trace(TraceSource.MVolume, new
+                await _guild.Trace(TraceSource.MVolume, new
                 {
                     BeforeState = State,
                     NewVolume = vol
                 });
                 State.Volume = vol;
-                await _manager.Node.SetVolumeAsync(vol);
+                await _guild.Node.SetVolumeAsync(vol);
             });
         }
 
@@ -31,7 +31,7 @@ namespace Encodeous.Musii.Player
         {
             return ExecuteSynchronized(async () =>
             {
-                await _manager.Trace(TraceSource.MShuffle, new
+                await _guild.Trace(TraceSource.MShuffle, new
                 {
                     BeforeState = State
                 });
@@ -43,17 +43,17 @@ namespace Encodeous.Musii.Player
         {
             return ExecuteSynchronized(async () =>
             {
-                await _manager.Trace(TraceSource.MPause, new
+                await _guild.Trace(TraceSource.MPause, new
                 {
                     BeforeState = State
                 });
                 if (State.IsPaused)
                 {
-                    await _manager.Node.ResumeAsync();
+                    await _guild.Node.ResumeAsync();
                 }
                 else
                 {
-                    await _manager.Node.PauseAsync();
+                    await _guild.Node.PauseAsync();
                 }
 
                 State.IsPaused = !State.IsPaused;
@@ -65,7 +65,7 @@ namespace Encodeous.Musii.Player
         {
             return ExecuteSynchronized(async () =>
             {
-                await _manager.Trace(TraceSource.MLock, new
+                await _guild.Trace(TraceSource.MLock, new
                 {
                     BeforeState = State
                 });
@@ -78,7 +78,7 @@ namespace Encodeous.Musii.Player
         {
             return ExecuteSynchronized(async () =>
             {
-                await _manager.Trace(TraceSource.MLoop, new
+                await _guild.Trace(TraceSource.MLoop, new
                 {
                     BeforeState = State,
                     NewLoopType = loopType
@@ -91,14 +91,14 @@ namespace Encodeous.Musii.Player
         {
             return ExecuteSynchronized(async () =>
             {
-                await _manager.Trace(TraceSource.MFilter, new
+                await _guild.Trace(TraceSource.MFilter, new
                 {
                     BeforeState = State,
                     NewFilterType = filterType
                 });
                 if (filterType == AudioFilter.None)
                 {
-                    await _manager.Node.ResetEqualizerAsync();
+                    await _guild.Node.ResetEqualizerAsync();
                     State.Filter = AudioFilter.None;
                 }
                 else
@@ -110,7 +110,7 @@ namespace Encodeous.Musii.Player
                         AudioFilter.Metal => Constants.METAL_ROCK,
                         _ => throw new Exception("Invalid filter")
                     };
-                    await _manager.Node.AdjustEqualizerAsync(filter);
+                    await _guild.Node.AdjustEqualizerAsync(filter);
                     State.Filter = filterType;
                 }
                 return filterType;
@@ -121,7 +121,7 @@ namespace Encodeous.Musii.Player
         {
             return ExecuteSynchronized(async () =>
             {
-                await _manager.Trace(TraceSource.MSkip, new
+                await _guild.Trace(TraceSource.MSkip, new
                 {
                     BeforeState = State,
                     BeforeTrackCount = State.Tracks.Count,
@@ -149,7 +149,7 @@ namespace Encodeous.Musii.Player
         {
             return ExecuteSynchronized(async () =>
             {
-                await _manager.Trace(TraceSource.MJump, new
+                await _guild.Trace(TraceSource.MJump, new
                 {
                     BeforeState = State,
                     BeforeTrackCount = State.Tracks.Count,
@@ -185,7 +185,7 @@ namespace Encodeous.Musii.Player
 
         public async Task AddTracksAsync(BaseMusicSource[] tracks, CommandContext ctx = null)
         {
-            await _manager.Trace(TraceSource.MAdd, new
+            await _guild.Trace(TraceSource.MAdd, new
             {
                 CurrentState = State,
                 TrackCount = tracks.Length
@@ -193,13 +193,13 @@ namespace Encodeous.Musii.Player
             if (tracks.Length == 1)
             {
                 if (ctx != null)
-                    await ctx.RespondAsync(_manager.AddedTrackMessage(await tracks[0].GetTrack(_manager.Node)));
-                else await Text.SendMessageAsync(_manager.AddedTrackMessage(await tracks[0].GetTrack(_manager.Node)));
+                    await ctx.RespondAsync(_guild.AddedTrackMessage(await tracks[0].GetTrack(_guild.Node)));
+                else await Text.SendMessageAsync(_guild.AddedTrackMessage(await tracks[0].GetTrack(_guild.Node)));
             }
             else
             {
-                if (ctx != null) await ctx.RespondAsync(_manager.AddedTracksMessage(tracks.Length));
-                else await Text.SendMessageAsync(_manager.AddedTracksMessage(tracks.Length));
+                if (ctx != null) await ctx.RespondAsync(_guild.AddedTracksMessage(tracks.Length));
+                else await Text.SendMessageAsync(_guild.AddedTracksMessage(tracks.Length));
             }
 
             await ExecuteSynchronized(() =>

@@ -21,25 +21,25 @@ namespace Encodeous.Musii.Core
 {
     public class MusiiGuild
     {
-        public bool HasPlayer { get; set; } = false;
+        public bool HasPlayer { get; set; }
         public MusiiPlayer Player { get; private set; }
-        public LavalinkGuildConnection Node { get; private set; } = null;
-        public MusiiCore Sessions { get; private set; }
+        public LavalinkGuildConnection Node { get; private set; }
+        public MusiiCore Core { get; }
         
         private DiscordClient _client;
         private ILogger _log;
         private SpotifyService _spotify;
-        private SearchService _searcher = null;
-        private DiscordChannel _traceLog = null;
-        private HashSet<TraceSource> _traceFilter = new HashSet<TraceSource>();
+        private SearchService _search;
+        private DiscordChannel _traceLog;
+        private HashSet<TraceSource> _traceFilter = new();
         private IConfiguration _config;
 
-        public MusiiGuild(DiscordClient client, ILogger<MusiiPlayer> log, SpotifyService spotify, MusiiCore sessions, IConfiguration config)
+        public MusiiGuild(DiscordClient client, ILogger<MusiiPlayer> log, SpotifyService spotify, MusiiCore core, IConfiguration config)
         {
             _client = client;
             _log = log;
             _spotify = spotify;
-            Sessions = sessions;
+            Core = core;
             _config = config;
         }
 
@@ -63,12 +63,12 @@ namespace Encodeous.Musii.Core
 
         public SearchService GetSearcher()
         {
-            if (_searcher == null)
+            if (_search == null)
             {
-                _searcher = new SearchService(_spotify, Node, new YoutubeService());
+                _search = new SearchService(_spotify, Node, new YoutubeService());
             }
 
-            return _searcher;
+            return _search;
         }
         
         public async Task<bool> CreatePlayerAsync(DiscordChannel voice, DiscordChannel text, PlayerRecord record = null)
@@ -102,7 +102,7 @@ namespace Encodeous.Musii.Core
             {
                 try
                 {
-                    await Player.Stop();
+                    await Player.StopAsync();
                 }
                 catch
                 {
@@ -111,7 +111,7 @@ namespace Encodeous.Musii.Core
 
                 HasPlayer = false;
                 Player = null;
-                _searcher = null;
+                _search = null;
                 await text.SendMessageAsync(Messages.FailedToJoin(voice));
             }
 
@@ -123,7 +123,7 @@ namespace Encodeous.Musii.Core
             if(!HasPlayer) throw new InvalidOperationException("Player is not active!");
             if (!byPlayer)
             {
-                await Player.Stop();
+                await Player.StopAsync();
             }
             else
             {

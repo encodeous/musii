@@ -63,7 +63,7 @@ namespace Encodeous.Musii
                 .WithEmbed(new DiscordEmbedBuilder()
                     .WithTitle(unpinnedLeave?"All users have left the voice channel":"Your playlist has been saved into a record.")
                     .WithColor(Info)
-                    .WithDescription($"Resume listening to this playlist by playing the record: \n`{data.Sessions.SaveRecord(data.Player.State.SaveRecord()).RecordId}` with the play command.")
+                    .WithDescription($"Resume listening to this playlist by playing the record: \n`{data.Core.SaveRecord(data.Player.State.SaveRecord()).RecordId}` with the play command.")
                     .WithFooter(unpinnedLeave?"Pin the playlist to prevent this from happening":"Record Saved."));
         }
         public static DiscordMessageBuilder LockChangedMessage(this MusiiGuild data)

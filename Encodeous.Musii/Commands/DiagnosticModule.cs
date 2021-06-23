@@ -9,7 +9,7 @@ using Encodeous.Musii.Core;
 
 namespace Encodeous.Musii.Commands
 {
-    [DSharpPlus.CommandsNext.Attributes.Description("Advanced Diagnostic Module"), RequireGuild, RequireOwner]
+    [Description("Advanced Diagnostic Module"), RequireGuild, RequireOwner]
     public class DiagnosticModule : BaseCommandModule
     {
         private MusiiCore _core;
@@ -21,11 +21,11 @@ namespace Encodeous.Musii.Commands
 
         [Priority(0)]
         [Command("trace")]
-        [DSharpPlus.CommandsNext.Attributes.Description("Set the bot to trace in this channel")]
+        [Description("Set the bot to trace in this channel")]
         [Cooldown(2, 4, CooldownBucketType.Guild)]
         public async Task TraceCommand(CommandContext ctx, params string[] traceFilter)
         {
-            var mgr = _core.GetGuild(ctx.Guild);
+            var mgr = _core.GetMusiiGuild(ctx.Guild);
             if (!traceFilter.Any())
             {
                 mgr.SetTraceDestination(null, new TraceSource[0]);
@@ -62,7 +62,7 @@ namespace Encodeous.Musii.Commands
         {
             await ctx.RespondAsync(@$"Tracing disabled, valid trace filters are: {
                 string.Join(", ",Enum.GetNames<TraceSource>().Select(x=>$"`{x}`"))}");
-            var mgr = _core.GetGuild(ctx.Guild);
+            var mgr = _core.GetMusiiGuild(ctx.Guild);
             mgr.SetTraceDestination(null, new TraceSource[0]);
         }
     }

@@ -24,7 +24,7 @@ namespace Encodeous.Musii
 {
     public class MusiiBot
     {
-        public async Task Run()
+        public async Task RunAsync()
         {
             if (!File.Exists("appsettings.json"))
             {

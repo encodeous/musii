@@ -16,14 +16,14 @@ namespace Encodeous.Musii.Player
 
         public async Task SendQueueMessageAsync(int startPage = 1)
         {
-            var msg = await Text.SendMessageAsync(await BuildQueueEmbed(startPage - 1, await GetQueue(), _queueLength));
+            var msg = await Text.SendMessageAsync(await BuildQueueEmbedAsync(startPage - 1, await GetQueueAsync(), _queueLength));
             _queueMessage = msg;
             Task.Run(async () =>
             {
                 DateTime startTime = DateTime.UtcNow;
-                var l = DiscordEmoji.FromName(Client, ":arrow_left:");
-                var r = DiscordEmoji.FromName(Client, ":arrow_right:");
-                var refresh = DiscordEmoji.FromName(Client, ":arrows_counterclockwise:");
+                var l = DiscordEmoji.FromName(_client, ":arrow_left:");
+                var r = DiscordEmoji.FromName(_client, ":arrow_right:");
+                var refresh = DiscordEmoji.FromName(_client, ":arrows_counterclockwise:");
                 int curpg = startPage - 1;
 
                 await msg.CreateReactionAsync(l);
@@ -33,14 +33,14 @@ namespace Encodeous.Musii.Player
                 bool changed = false;
                 while (!_stopped && msg == _queueMessage && DateTime.Now - startTime <= _queueTimeout)
                 {
-                    var cq = await GetQueue();
+                    var cq = await GetQueueAsync();
                     int tpages = (int) Math.Ceiling((cq.Count - 1) / 20.0);
                     if (curpg >= tpages) curpg = tpages - 1;
                     if (curpg < 0) curpg = 0;
                     if (changed)
                     {
                         startTime = DateTime.UtcNow;
-                        await msg.ModifyAsync(async x => x.Embed = await BuildQueueEmbed(curpg, cq));
+                        await msg.ModifyAsync(async x => x.Embed = await BuildQueueEmbedAsync(curpg, cq));
                     }
                     changed = false;
                     var res = await msg.CollectReactionsAsync(TimeSpan.FromMilliseconds(500));
@@ -51,7 +51,7 @@ namespace Encodeous.Musii.Player
                         {
                             try
                             {
-                                if (u != Client.CurrentUser)
+                                if (u != _client.CurrentUser)
                                 {
                                     await msg.DeleteReactionAsync(l, u);
                                     changed = true;
@@ -75,7 +75,7 @@ namespace Encodeous.Musii.Player
                         {
                             try
                             {
-                                if (u != Client.CurrentUser)
+                                if (u != _client.CurrentUser)
                                 {
                                     await msg.DeleteReactionAsync(r, u);
                                     changed = true;
@@ -99,7 +99,7 @@ namespace Encodeous.Musii.Player
                         {
                             try
                             {
-                                if (u != Client.CurrentUser)
+                                if (u != _client.CurrentUser)
                                 {
                                     await msg.DeleteReactionAsync(refresh, u);
                                     changed = true;
@@ -115,7 +115,7 @@ namespace Encodeous.Musii.Player
             });
         }
 
-        private async Task<DiscordEmbedBuilder> BuildQueueEmbed(int page, List<BaseMusicSource> q, int itemsPerPage = 20)
+        private async Task<DiscordEmbedBuilder> BuildQueueEmbedAsync(int page, List<BaseMusicSource> q, int itemsPerPage = 20)
         {
             // 20 items per pag
             int tpages = (int) Math.Ceiling((q.Count - 1) / (double)itemsPerPage);
@@ -126,7 +126,7 @@ namespace Encodeous.Musii.Player
             var builder = new DiscordEmbedBuilder()
                 .WithTitle($"Queue for {Voice.Name} - Page {page + 1}/{tpages}");
 
-            var selTrack = await _manager.ResolveTrackAsync(State.CurrentTrack);
+            var selTrack = await _guild.ResolveTrackAsync(State.CurrentTrack);
             builder.AddField("Now playing",
                 $"`{selTrack.Title}`\n{Utils.GetProgress(State.CurrentPosition / selTrack.Length)}\n" +
                 $"**{State.CurrentPosition.MusiiFormat()} / {selTrack.Length.MusiiFormat()}**");
@@ -177,7 +177,7 @@ namespace Encodeous.Musii.Player
             return builder;
         }
 
-        public Task<List<BaseMusicSource>> GetQueue()
+        public Task<List<BaseMusicSource>> GetQueueAsync()
         {
             return ExecuteSynchronized(() =>
             {

@@ -11,7 +11,7 @@ namespace Encodeous.Musii.Core
     /// </summary>
     public class MusiiCore
     {
-        private ConcurrentDictionary<ulong, MusiiGuild> _newSessions = new();
+        private ConcurrentDictionary<ulong, MusiiGuild> _guilds = new();
 
         private IServiceProvider _provider;
         private RecordContext _context;
@@ -39,17 +39,15 @@ namespace Encodeous.Musii.Core
             }
         }
         
-        public MusiiGuild GetGuild(DiscordGuild guild)
+        public MusiiGuild GetMusiiGuild(DiscordGuild guild)
         {
-            if (_newSessions.ContainsKey(guild.Id))
+            if (_guilds.ContainsKey(guild.Id))
             {
-                return _newSessions[guild.Id];
+                return _guilds[guild.Id];
             }
-            else
-            {
-                var scope = _provider.CreateScope();
-                return _newSessions[guild.Id] = scope.ServiceProvider.GetRequiredService<MusiiGuild>();
-            }
+
+            var scope = _provider.CreateScope();
+            return _guilds[guild.Id] = scope.ServiceProvider.GetRequiredService<MusiiGuild>();
         }
     }
 }
