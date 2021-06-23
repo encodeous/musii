@@ -103,16 +103,18 @@ namespace Encodeous.Musii.Player
             {
                 BeforeState = State
             });
+            State.CurrentTrack = null;
+            State.CurrentPosition = TimeSpan.Zero;
             if (!State.Tracks.Any())
             {
                 await Text.SendMessageAsync(_guild.PlaylistEmptyMessage());
                 await StopAsync();
+                
                 return false;
             }
             // Fetch track
             State.CurrentTrack = State.Tracks.First();
             State.Tracks.RemoveAt(0);
-            State.CurrentPosition = TimeSpan.Zero;
             return true;
         }
         public async Task SetPositionAsync(TimeSpan pos)
@@ -131,6 +133,7 @@ namespace Encodeous.Musii.Player
         }
         public async Task PlayActiveSongAsync()
         {
+            if (State.CurrentTrack == null) return;
             await _guild.Trace(TraceSource.MPlayActive, new
             {
                 CurrentState = State

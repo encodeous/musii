@@ -146,6 +146,23 @@ namespace Encodeous.Musii.Commands
         {
             return SkipCommand(ctx, 0, count - 1);
         }
+        [Priority(1)]
+        [Command("clear"), Aliases("c")]
+        [Description("Clears the whole playlist")]
+        [Cooldown(2, 4, CooldownBucketType.Guild)]
+        public async Task ClearCommand(CommandContext ctx)
+        {
+            var mgr = _sessions.GetMusiiGuild(ctx.Guild);
+            if (await mgr.CheckIfFailsAsync(ExecutionFlags.RequireHasPlayer |
+                                            ExecutionFlags.RequireVoicestate |
+                                            ExecutionFlags.RequireSameVoiceChannel |
+                                            ExecutionFlags.RequireManMsgOrUnlocked, ctx)) return;
+
+            int cnt = mgr.Player.State.Tracks.Count + 1;
+            await mgr.Player.SkipSongsAsync(0, mgr.Player.State.Tracks.Count);
+            
+            await ctx.RespondAsync(mgr.ClearQueueMessage(cnt));
+        }
         [Priority(0)]
         [Command("skip")]
         [Cooldown(2, 4, CooldownBucketType.Guild)]

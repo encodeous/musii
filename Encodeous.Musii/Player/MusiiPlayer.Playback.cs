@@ -117,6 +117,12 @@ namespace Encodeous.Musii.Player
             });
         }
 
+        /// <summary>
+        /// 0 based index
+        /// </summary>
+        /// <param name="l"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
         public Task<bool> SkipSongsAsync(int l, int r)
         {
             return ExecuteSynchronized(async () =>

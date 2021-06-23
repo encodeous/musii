@@ -35,6 +35,14 @@ namespace Encodeous.Musii
                     .WithThumbnail(track.GetThumbnail())
                     .WithFooter($"In {data.Player.Voice.Name}"));
         }
+        public static DiscordMessageBuilder ClearQueueMessage(this MusiiGuild data, int count)
+        {
+            return new DiscordMessageBuilder()
+                .WithEmbed(new DiscordEmbedBuilder()
+                    .WithTitle("Queue has been cleared")
+                    .WithColor(Success)
+                    .WithDescription($"{count} {(count == 1 ? "song":"songs")} have been removed"));
+        }
         public static async Task<DiscordMessageBuilder> SkippedTrackMessageAsync(this MusiiGuild data)
         {
             var track = await data.ResolveTrackAsync(data.Player.State.CurrentTrack);
