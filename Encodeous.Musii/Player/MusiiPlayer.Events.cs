@@ -24,6 +24,12 @@ namespace Encodeous.Musii.Player
                 await Text.SendMessageAsync(Messages.GenericError(
                     "Disconnected by Moderator", "The bot will leave", ""));
                 _log.LogDebug($"Bot voice websocket closed {args.Reason} with code {args.Code}");
+                
+            }
+            else
+            {
+                await Text.SendMessageAsync(Messages.GenericError(
+                    "Network Error", "The bot has encountered a network error", ""));
             }
             await StopAsync(true);
         }

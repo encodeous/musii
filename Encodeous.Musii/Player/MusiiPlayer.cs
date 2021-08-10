@@ -53,23 +53,37 @@ namespace Encodeous.Musii.Player
             _queueTimeout = queueTimeout;
             Task.Run(async () =>
             {
-                DateTime leastTime = DateTime.UtcNow;
-                while (!_stopped)
+                try
                 {
-                    if (!State.IsPinned)
+                    DateTime leastTime = DateTime.UtcNow;
+                    while (!_stopped)
                     {
-                        if (Voice.Users.Count() > 1)
+                        if (!State.IsPinned)
                         {
-                            leastTime = DateTime.UtcNow;
+                            if (Voice.Users.Count() > 1)
+                            {
+                                leastTime = DateTime.UtcNow;
+                            }
+
+                            if (DateTime.UtcNow - leastTime > unpinnnedLeaveTime)
+                            {
+                                await StopAsync(true, true);
+                            }
                         }
 
-                        if (DateTime.UtcNow - leastTime > unpinnnedLeaveTime)
-                        {
-                            await StopAsync(true, true);
-                        }
+                        await Task.Delay(1000);
                     }
-
-                    await Task.Delay(1000);
+                }
+                catch
+                {
+                    try
+                    {
+                        await StopAsync(true, false);
+                    }
+                    catch
+                    {
+                        
+                    }
                 }
             });
             if (State.IsPaused)

@@ -25,7 +25,7 @@ namespace Encodeous.Musii.Data
             Filter = AudioFilter.None;
         }
         // state-specific properties
-        public int Volume;
+        public int Volume = 100;
         public bool IsLocked;
         public AudioFilter Filter;
         [JsonIgnore]

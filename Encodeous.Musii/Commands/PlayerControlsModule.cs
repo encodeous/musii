@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
@@ -102,14 +103,7 @@ namespace Encodeous.Musii.Commands
             }
             else
             {
-                if (jumpAmount == 0)
-                {
-                    await ctx.RespondAsync(Messages.GenericSuccess($"The playlist was not affected", "", ""));
-                }
-                else
-                {
-                    await ctx.RespondAsync(Messages.GenericSuccess($"Jumped {Math.Abs(jumpAmount)} time {(jumpAmount < 0? "backward":"forward")}", "", ""));
-                }
+                await ctx.RespondAsync(Messages.GenericSuccess($"Jumped 1 time forward", "", ""));
             }
 
             await mgr.Player.JumpAsync(jumpAmount);
@@ -190,7 +184,7 @@ namespace Encodeous.Musii.Commands
         }
         [Command("save"), Aliases("sv", "rec", "record")]
         [Description("Saves the current playback into a record. Can be played across guilds.")]
-        [Cooldown(3, 60, CooldownBucketType.Guild)]
+        [Cooldown(3, 30, CooldownBucketType.Guild)]
         public async Task SaveCommand(CommandContext ctx)
         {
             var mgr = _sessions.GetMusiiGuild(ctx.Guild);
@@ -200,7 +194,7 @@ namespace Encodeous.Musii.Commands
             await ctx.RespondAsync(mgr.SaveSessionMessage());
         }
         [Command("seek"), Aliases("m", "move", "set")]
-        [Description("Moves/sets the playhead position of the current song. Expected format: `[-]h:m:s[a]`. ex. `-0:23:0` or `1:10:0a` [a] stands for absolute time.")]
+        [Description("Moves/sets the playhead position of the current song. Expected format: `[-][h]:[m]:s[a]`. ex. `-23` - `-23s` or `1:10:0a` - `1h 10m` [a] stands for absolute time.")]
         [Cooldown(2, 4, CooldownBucketType.Guild)]
         public async Task Seek(CommandContext ctx, string time)
         {
@@ -209,26 +203,65 @@ namespace Encodeous.Musii.Commands
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel |
                                        ExecutionFlags.RequireManMsgOrUnlocked, ctx)) return;
-            bool absolute = char.ToLower(time[^1]) == 'a';
-            if (absolute) time = time[..^1];
+            var resS = await mgr.ResolveTrackAsync(mgr.Player.State.CurrentTrack);
 
-            if (!TimeSpan.TryParse(time, out var ts))
+            if (resS.IsStream)
             {
                 await ctx.RespondAsync(Messages.GenericError(
-                    "Invalid Format", $"Expected format: `[-]h:m:s[a]`. ex. `-0:23:0` or `1:10:0a` [a] stands for absolute time.", ""));
+                    "Unable to seek", $"The current song is a stream", ""));
+                return;
+            }
+            
+            bool absolute = char.ToLower(time[^1]) == 'a';
+            if (absolute) time = time[..^1];
+            bool negative = char.ToLower(time[0]) == '-';
+            if (negative) time = time[1..];
+
+            var spl = time.Split(":");
+            TimeSpan ts = TimeSpan.Zero;
+            try
+            {
+                var res = spl.Select(x => double.Parse(x)).ToList();
+                if (spl.Length == 1)
+                {
+                    ts += TimeSpan.FromSeconds(res[0]);
+                }
+                else if (spl.Length == 2)
+                {
+                    ts += TimeSpan.FromSeconds(res[1]);
+                    ts += TimeSpan.FromMinutes(res[0]);
+                }
+                else if(spl.Length == 3)
+                {
+                    ts += TimeSpan.FromSeconds(res[2]);
+                    ts += TimeSpan.FromMinutes(res[1]);
+                    ts += TimeSpan.FromHours(res[0]);
+                }
+            }
+            catch
+            {
+                await ctx.RespondAsync(Messages.GenericError(
+                    "Invalid Format", $"Expected format: `[-][h]:[m]:s[a]`. ex. `-23` - `-23s` or `1:10:0a` - `1h 10m` [a] stands for absolute time.", ""));
                 return;
             }
 
+            if (negative) ts *= -1;
+            
             var nts = TimeSpan.Zero;
             if (!absolute) nts = mgr.Player.State.CurrentPosition;
             nts += ts;
             if(nts <= TimeSpan.Zero) nts = TimeSpan.Zero;
-            var res = await mgr.ResolveTrackAsync(mgr.Player.State.CurrentTrack);
-            if (nts >= res.Length - TimeSpan.FromMilliseconds(500)) nts = res.Length - TimeSpan.FromMilliseconds(500);
+            if (nts >= resS.Length - TimeSpan.FromMilliseconds(500)) nts = resS.Length - TimeSpan.FromMilliseconds(500);
 
             await mgr.Player.SetPositionAsync(nts);
 
             await ctx.RespondAsync(mgr.PositionSetMessage(nts));
+        }
+
+        [Group("filter")]
+        public class FilterModule : BaseCommandModule
+        {
+            
         }
     }
 }

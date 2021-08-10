@@ -16,101 +16,111 @@ namespace Encodeous.Musii.Player
 
         public async Task SendQueueMessageAsync(int startPage = 1)
         {
-            var msg = await Text.SendMessageAsync(await BuildQueueEmbedAsync(startPage - 1, await GetQueueAsync(), _queueLength));
+            var msg = await Text.SendMessageAsync(await BuildQueueEmbedAsync(startPage - 1, await GetQueueAsync(),
+                _queueLength));
             _queueMessage = msg;
             Task.Run(async () =>
             {
-                DateTime startTime = DateTime.UtcNow;
-                var l = DiscordEmoji.FromName(_client, ":arrow_left:");
-                var r = DiscordEmoji.FromName(_client, ":arrow_right:");
-                var refresh = DiscordEmoji.FromName(_client, ":arrows_counterclockwise:");
-                int curpg = startPage - 1;
-
-                await msg.CreateReactionAsync(l);
-                await msg.CreateReactionAsync(refresh);
-                await msg.CreateReactionAsync(r);
-                
-                bool changed = false;
-                while (!_stopped && msg == _queueMessage && DateTime.Now - startTime <= _queueTimeout)
+                try
                 {
-                    var cq = await GetQueueAsync();
-                    int tpages = (int) Math.Ceiling((cq.Count - 1) / 20.0);
-                    if (curpg >= tpages) curpg = tpages - 1;
-                    if (curpg < 0) curpg = 0;
-                    if (changed)
+                    DateTime startTime = DateTime.UtcNow;
+                    var l = DiscordEmoji.FromName(_client, ":arrow_left:");
+                    var r = DiscordEmoji.FromName(_client, ":arrow_right:");
+                    var refresh = DiscordEmoji.FromName(_client, ":arrows_counterclockwise:");
+                    int curpg = startPage - 1;
+
+                    await msg.CreateReactionAsync(l);
+                    await msg.CreateReactionAsync(refresh);
+                    await msg.CreateReactionAsync(r);
+
+                    bool changed = false;
+                    while (!_stopped && msg == _queueMessage && DateTime.Now - startTime <= _queueTimeout)
                     {
-                        startTime = DateTime.UtcNow;
-                        await msg.ModifyAsync(async x => x.Embed = await BuildQueueEmbedAsync(curpg, cq));
-                    }
-                    changed = false;
-                    var res = await msg.CollectReactionsAsync(TimeSpan.FromMilliseconds(500));
-                    if (res.Any(x => x.Emoji == l))
-                    {
-                        var x = res.First(x => x.Emoji == l);
-                        foreach (var u in x.Users)
+                        var cq = await GetQueueAsync();
+                        int tpages = (int) Math.Ceiling((cq.Count - 1) / 20.0);
+                        if (curpg >= tpages) curpg = tpages - 1;
+                        if (curpg < 0) curpg = 0;
+                        if (changed)
                         {
-                            try
+                            startTime = DateTime.UtcNow;
+                            var embed = await BuildQueueEmbedAsync(curpg, cq);
+                            await msg.ModifyAsync(x => x.Embed = embed);
+                        }
+
+                        changed = false;
+                        var res = await msg.CollectReactionsAsync(TimeSpan.FromMilliseconds(500));
+                        if (res.Any(x => x.Emoji == l))
+                        {
+                            var x = res.First(x => x.Emoji == l);
+                            foreach (var u in x.Users)
                             {
-                                if (u != _client.CurrentUser)
+                                try
                                 {
-                                    await msg.DeleteReactionAsync(l, u);
-                                    changed = true;
-                                    curpg--;
-                                    if (curpg < 0)
+                                    if (u != _client.CurrentUser)
                                     {
-                                        curpg = tpages - 1;
+                                        await msg.DeleteReactionAsync(l, u);
+                                        changed = true;
+                                        curpg--;
+                                        if (curpg < 0)
+                                        {
+                                            curpg = tpages - 1;
+                                        }
                                     }
                                 }
-                            }
-                            catch
-                            {
+                                catch
+                                {
 
+                                }
                             }
                         }
-                    } 
-                    else if (res.Any(x => x.Emoji == r))
-                    {
-                        var x = res.First(x => x.Emoji == r);
-                        foreach (var u in x.Users)
+                        else if (res.Any(x => x.Emoji == r))
                         {
-                            try
+                            var x = res.First(x => x.Emoji == r);
+                            foreach (var u in x.Users)
                             {
-                                if (u != _client.CurrentUser)
+                                try
                                 {
-                                    await msg.DeleteReactionAsync(r, u);
-                                    changed = true;
-                                    curpg++;
-                                    if (curpg > tpages - 1)
+                                    if (u != _client.CurrentUser)
                                     {
-                                        curpg = 0;
+                                        await msg.DeleteReactionAsync(r, u);
+                                        changed = true;
+                                        curpg++;
+                                        if (curpg > tpages - 1)
+                                        {
+                                            curpg = 0;
+                                        }
                                     }
                                 }
-                            }
-                            catch
-                            {
-
-                            }
-                        }
-                    }
-                    else if(res.Any(x => x.Emoji == refresh))
-                    {
-                        var x = res.First(x => x.Emoji == refresh);
-                        foreach (var u in x.Users)
-                        {
-                            try
-                            {
-                                if (u != _client.CurrentUser)
+                                catch
                                 {
-                                    await msg.DeleteReactionAsync(refresh, u);
-                                    changed = true;
+
                                 }
                             }
-                            catch
+                        }
+                        else if (res.Any(x => x.Emoji == refresh))
+                        {
+                            var x = res.First(x => x.Emoji == refresh);
+                            foreach (var u in x.Users)
                             {
+                                try
+                                {
+                                    if (u != _client.CurrentUser)
+                                    {
+                                        await msg.DeleteReactionAsync(refresh, u);
+                                        changed = true;
+                                    }
+                                }
+                                catch
+                                {
 
+                                }
                             }
                         }
                     }
+                }
+                catch
+                {
+                    _queueMessage = null;
                 }
             });
         }
