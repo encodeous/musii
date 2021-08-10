@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.Lavalink;
 using Newtonsoft.Json;
@@ -34,7 +35,7 @@ namespace Encodeous.Musii.Network
         {
             if (_cachedTrack is null)
             {
-                var x = await connection.GetTracksAsync(TrackId);
+                var x = await connection.GetTracksAsync(new Uri($"https://www.youtube.com/watch?v={TrackId}"));
                 _cachedTrack = x.Tracks.First();
             }
 
