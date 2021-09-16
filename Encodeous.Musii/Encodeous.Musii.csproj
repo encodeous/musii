@@ -5,28 +5,28 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="DSharpPlus" Version="4.0.1" />
-      <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.1" />
-      <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.1" />
-      <PackageReference Include="DSharpPlus.Lavalink" Version="4.0.1" />
-      <PackageReference Include="DSharpPlus.VoiceNext" Version="4.0.1" />
+      <PackageReference Include="DSharpPlus" Version="4.1.0" />
+      <PackageReference Include="DSharpPlus.CommandsNext" Version="4.1.0" />
+      <PackageReference Include="DSharpPlus.Interactivity" Version="4.1.0" />
+      <PackageReference Include="DSharpPlus.Lavalink" Version="4.1.0" />
+      <PackageReference Include="DSharpPlus.VoiceNext" Version="4.1.0" />
       <PackageReference Include="Humanizer.Core" Version="2.11.10" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.7" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="5.0.7">
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="5.0.10">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.7" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.10" />
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2" />
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="5.0.1" />
       <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
       <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.0" />
-      <PackageReference Include="ResourceLoader" Version="3.1.20095.1" />
-      <PackageReference Include="SpotifyAPI.Web" Version="6.2.0" />
-      <PackageReference Include="SpotifyAPI.Web.Auth" Version="6.2.0" />
-      <PackageReference Include="YoutubeExplode" Version="6.0.3" />
+      <PackageReference Include="ResourceLoader" Version="3.2.4" />
+      <PackageReference Include="SpotifyAPI.Web" Version="6.2.1" />
+      <PackageReference Include="SpotifyAPI.Web.Auth" Version="6.2.1" />
+      <PackageReference Include="YoutubeExplode" Version="6.0.5" />
     </ItemGroup>
 
     <ItemGroup>
