@@ -119,9 +119,9 @@ namespace Encodeous.Musii.Commands
                                        ExecutionFlags.RequireSameVoiceChannel |
                                        ExecutionFlags.RequireManMsgOrUnlocked, ctx)) return;
 
-            if (!ctx.HasPermission(Permissions.ManageMessages))
+            if (!ctx.HasPermission(Permissions.ManageMessages) && !ctx.IsExecutedByBotOwner())
             {
-                if (volume < 0 || volume > 100)
+                if (volume is < 0 or > 100)
                 {
                     await ctx.RespondAsync(Messages.GenericError(
                         "Invalid Volume", $"Please specify a volume between [0, 1000]", ""));
@@ -130,7 +130,7 @@ namespace Encodeous.Musii.Commands
             }
             else
             {
-                if (volume < 0 || volume > 1000)
+                if (volume is < 0 or > 1000)
                 {
                     await ctx.RespondAsync(Messages.GenericError(
                         "Invalid Volume", $"Please specify a volume between [0, 1000]", ""));

@@ -9,6 +9,7 @@ namespace Encodeous.Musii.Commands
         RequireSameVoiceChannel = 1 << 0,
         RequireHasPlayer = 1 << 1,
         RequireManageMessage = 1 << 2,
-        RequireManMsgOrUnlocked = 1 << 3
+        RequireManMsgOrUnlocked = 1 << 3,
+        AuthorizationNotRequired = 1 << 4
     }
 }

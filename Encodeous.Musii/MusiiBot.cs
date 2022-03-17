@@ -36,7 +36,7 @@ namespace Encodeous.Musii
                 .ConfigureServices(async (context, services) =>
                 {
                     // add services
-                    services.AddSingleton<Core.MusiiCore>();
+                    services.AddSingleton<MusiiCore>();
                     services.AddSingleton<SpotifyService>();
                     services.AddSingleton<YoutubeService>();
                     // add discord

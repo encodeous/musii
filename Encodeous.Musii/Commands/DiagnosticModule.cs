@@ -26,6 +26,7 @@ namespace Encodeous.Musii.Commands
         public async Task TraceCommand(CommandContext ctx, params string[] traceFilter)
         {
             var mgr = _core.GetMusiiGuild(ctx.Guild);
+            if (await mgr.CheckIfFailsAsync(ExecutionFlags.RequireManageMessage, ctx)) return;
             if (!traceFilter.Any())
             {
                 mgr.SetTraceDestination(null, new TraceSource[0]);
@@ -60,9 +61,10 @@ namespace Encodeous.Musii.Commands
         [Cooldown(2, 4, CooldownBucketType.Guild)]
         public async Task TraceCommand(CommandContext ctx)
         {
-            await ctx.RespondAsync(@$"Tracing disabled, valid trace filters are: {
-                string.Join(", ",Enum.GetNames<TraceSource>().Select(x=>$"`{x}`"))}");
             var mgr = _core.GetMusiiGuild(ctx.Guild);
+            if (await mgr.CheckIfFailsAsync(ExecutionFlags.RequireManageMessage, ctx)) return;
+            await ctx.RespondAsync(@$"Tracing is disabled, valid trace filters are: {
+                string.Join(", ",Enum.GetNames<TraceSource>().Select(x=>$"`{x}`"))}");
             mgr.SetTraceDestination(null, new TraceSource[0]);
         }
     }

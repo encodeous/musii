@@ -31,6 +31,15 @@ namespace Encodeous.Musii
                     .WithTitle("The player is active in another text channel.")
                     .WithDescription($"The requested action has been performed in {data.Player.Text.Mention}"));
         }
+        public static DiscordMessageBuilder NotAuthorized(ulong guildId)
+        {
+            return new DiscordMessageBuilder()
+                .WithEmbed(new DiscordEmbedBuilder()
+                    .WithColor(DiscordColor.Red)
+                    .WithTitle("This guild has not yet been authorized to run Musii.")
+                    .WithDescription($"Please ask the person operating this instance of Musii to authorize the current guild: (Guild Id: `{guildId}`). \n\nMake sure to copy the guild id fully, and send it to the operator")
+                    .WithFooter("Musii is a privately hosted bot. (Operators can run the authorize <guild> command)"));
+        }
         public static DiscordMessageBuilder AddedTrackMessage(this MusiiGuild data, LavalinkTrack track)
         {
             return new DiscordMessageBuilder()

@@ -9,6 +9,13 @@ namespace Encodeous.Musii.Commands
     {
         public static async Task<bool> CheckIfFailsAsync(this MusiiGuild manager, ExecutionFlags flags, CommandContext ctx)
         {
+            if (!flags.HasFlag(ExecutionFlags.AuthorizationNotRequired))
+            {
+                if (!await manager.Core.CheckAuthorization(ctx))
+                {
+                    return true;
+                }
+            }
             if (flags.HasFlag(ExecutionFlags.RequireHasPlayer))
             {
                 if (!manager.HasPlayer)
@@ -51,7 +58,7 @@ namespace Encodeous.Musii.Commands
 
             if (flags.HasFlag(ExecutionFlags.RequireManageMessage))
             {
-                if (!ctx.HasPermission(Permissions.ManageMessages))
+                if (!ctx.HasPermission(Permissions.ManageMessages) && !ctx.IsExecutedByBotOwner())
                 {
                     await ctx.RespondAsync(Messages.GenericError(
                         "You do not have permission to execute this command!", $"", ""));
@@ -66,7 +73,7 @@ namespace Encodeous.Musii.Commands
                         "There is no music playing!", $"", ""));
                     return true;
                 }
-                if (!ctx.HasPermission(Permissions.ManageMessages) && manager.Player.State.IsLocked)
+                if (!ctx.HasPermission(Permissions.ManageMessages) && manager.Player.State.IsLocked && !ctx.IsExecutedByBotOwner())
                 {
                     await ctx.RespondAsync(Messages.GenericError(
                         "The playlist is locked, you do not have access to it.", $"", ""));

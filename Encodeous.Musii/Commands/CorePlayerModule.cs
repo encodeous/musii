@@ -117,7 +117,6 @@ namespace Encodeous.Musii.Commands
         [Command("lock"), Aliases("dj")]
         [Description("Toggles lock on playback commands to users with Manage Message permissions.")]
         [Cooldown(2, 4, CooldownBucketType.Guild)]
-        [RequireUserPermissions(Permissions.ManageMessages)]
         public async Task LockCommand(CommandContext ctx)
         {
             var mgr = _sessions.GetMusiiGuild(ctx.Guild);
@@ -146,9 +145,9 @@ namespace Encodeous.Musii.Commands
         [Aliases("s")]
         [Description("Skips song(s) (including currently played song), or within a range")]
         [Cooldown(2, 4, CooldownBucketType.Guild)]
-        public Task SkipCommand(CommandContext ctx, int count = 1)
+        public async Task SkipCommand(CommandContext ctx, int count = 1)
         {
-            return SkipCommand(ctx, 0, count - 1);
+            await SkipCommand(ctx, 0, count - 1);
         }
         [Priority(1)]
         [Command("clear"), Aliases("c")]
