@@ -257,11 +257,5 @@ namespace Encodeous.Musii.Commands
 
             await ctx.RespondAsync(mgr.PositionSetMessage(nts));
         }
-
-        [Group("filter")]
-        public class FilterModule : BaseCommandModule
-        {
-            
-        }
     }
 }
