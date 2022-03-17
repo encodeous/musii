@@ -24,6 +24,13 @@ namespace Encodeous.Musii
                     .WithDescription("The bot will now leave the voice channel")
                     .WithFooter($"In {data.Player.Voice.Name}"));
         }
+        public static DiscordMessageBuilder ActiveInOtherChannel(this MusiiGuild data)
+        {
+            return new DiscordMessageBuilder()
+                .WithEmbed(new DiscordEmbedBuilder()
+                    .WithTitle("The player is active in another text channel.")
+                    .WithDescription($"The requested action has been performed in {data.Player.Text.Mention}"));
+        }
         public static DiscordMessageBuilder AddedTrackMessage(this MusiiGuild data, LavalinkTrack track)
         {
             return new DiscordMessageBuilder()

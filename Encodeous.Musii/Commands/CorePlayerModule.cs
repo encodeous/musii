@@ -106,7 +106,12 @@ namespace Encodeous.Musii.Commands
             if (await mgr.CheckIfFailsAsync(ExecutionFlags.RequireHasPlayer |
                                        ExecutionFlags.RequireVoicestate |
                                        ExecutionFlags.RequireSameVoiceChannel, ctx)) return;
-        
+
+            if (ctx.Channel != mgr.Player.Text)
+            {
+                await ctx.RespondAsync(mgr.ActiveInOtherChannel());
+            }
+            
             await mgr.Player.SendQueueMessageAsync(page);
         }
         [Command("lock"), Aliases("dj")]
@@ -126,7 +131,6 @@ namespace Encodeous.Musii.Commands
         [Command("pin"), Aliases("radio")]
         [Description("Pins the bot so that it does not leave until the playlist is empty")]
         [Cooldown(2, 4, CooldownBucketType.Guild)]
-        [RequireUserPermissions(Permissions.ManageMessages)]
         public async Task PinCommand(CommandContext ctx)
         {
             var mgr = _sessions.GetMusiiGuild(ctx.Guild);
