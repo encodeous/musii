@@ -35,6 +35,15 @@ public class BotControlModule : BaseCommandModule
         await ctx.RespondAsync("The guild has been authorized");
     }
     
+    [Command("invite")]
+    [Description("Gets the invite link")]
+    public async Task InviteCommand(CommandContext ctx)
+    {
+        await ctx.RespondAsync(new DiscordEmbedBuilder()
+            .WithTitle("Musii Invite Link")
+            .WithDescription($"https://discord.com/api/oauth2/authorize?client_id={_client.CurrentUser.Id}&permissions=139657079872&scope=bot"));
+    }
+    
     [Command("revoke")]
     [Description("Revoke the authorization of a guild")]
     public async Task RevokeCommand(CommandContext ctx, ulong guildId)

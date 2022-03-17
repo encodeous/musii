@@ -42,6 +42,7 @@ namespace Encodeous.Musii.Core
 
         public async ValueTask<bool> CheckAuthorization(CommandContext ctx)
         {
+            if (!_requireAuthorization) return true;
             if (_authorizedGuilds.Contains(ctx.Guild.Id))
             {
                 return true;
