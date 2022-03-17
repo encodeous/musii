@@ -1,5 +1,4 @@
-﻿using System;
-using Encodeous.Musii;
+﻿using Encodeous.Musii;
 
 var musii = new MusiiBot();
 
