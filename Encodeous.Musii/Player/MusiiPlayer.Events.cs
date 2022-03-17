@@ -107,6 +107,7 @@ namespace Encodeous.Musii.Player
         
         public async Task TrackUpdated(PlayerUpdateEventArgs args)
         {
+            if (State.CurrentTrack is null) return;
             var track = await _guild.ResolveTrackAsync(State.CurrentTrack);
             if (args.Player.CurrentState.CurrentTrack == track)
             {
